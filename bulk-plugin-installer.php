@@ -3,7 +3,7 @@
  * Plugin Name:       Bulk Plugin Installer
  * Plugin URI:        https://github.com/lusky3/bulk-plugin-installer
  * Description:       Upload and install multiple WordPress plugin ZIP files in a single operation with preview, rollback, and profile support.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires at least: 5.8
  * Requires PHP:      8.2
  * Author:            Cody (lusky3) + Bulk Plugin Installer Contributors
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'BPI_VERSION', '1.0.0' );
+define( 'BPI_VERSION', '1.0.1' );
 define( 'BPI_PLUGIN_FILE', __FILE__ );
 define( 'BPI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BPI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

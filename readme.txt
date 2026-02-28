@@ -4,7 +4,7 @@ Tags: bulk, plugin, installer, upload, batch
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 8.2
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -79,6 +79,11 @@ Yes. Deactivation only cleans up temporary data (queue transients and backup fil
 
 == Changelog ==
 
+= 1.0.1 =
+* Fix preview screen showing empty plugin names, versions, and authors
+* Modernize admin UI with card-based layout and improved visual design
+* Fix release build to only include runtime files
+
 = 1.0.0 =
 * Initial release
 * Bulk ZIP upload with drag-and-drop
@@ -92,6 +97,9 @@ Yes. Deactivation only cleans up temporary data (queue transients and backup fil
 * Activity logging
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Fixes empty preview data and modernizes the admin interface.
 
 = 1.0.0 =
 Initial release.
