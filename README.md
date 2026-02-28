@@ -1,5 +1,14 @@
 # Bulk Plugin Installer
 
+[![Lint](../../actions/workflows/lint.yml/badge.svg)](../../actions/workflows/lint.yml)
+[![Tests](../../actions/workflows/test.yml/badge.svg)](../../actions/workflows/test.yml)
+[![Security](../../actions/workflows/security.yml/badge.svg)](../../actions/workflows/security.yml)
+[![Integration](../../actions/workflows/integration.yml/badge.svg)](../../actions/workflows/integration.yml)
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D8.2-8892BF.svg)](https://php.net)
+[![WordPress](https://img.shields.io/badge/wordpress-%3E%3D5.8-21759B.svg)](https://wordpress.org)
+[![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](../../pulls)
+
 Upload and install multiple WordPress plugin ZIP files in a single operation with preview, rollback, and profile support.
 
 ## Features
@@ -93,5 +102,6 @@ See [SECURITY.md](.github/SECURITY.md) for reporting vulnerabilities.
 
 GPL-2.0-or-later. See [LICENSE](LICENSE) for the full text.
 
-AI Usage Disclaimer
+## AI Usage Disclaimer
+
 Portions of this codebase were generated with the assistance of Large Language Models (LLMs). All AI-generated code has been reviewed and tested to ensure quality and correctness.

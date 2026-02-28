@@ -57,6 +57,7 @@ class BPIAdminPage {
      */
     public function registerHooks(): void {
         add_action( 'admin_menu', array( $this, 'registerMenu' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'enqueueAssets' ) );
         add_filter( 'plugin_install_action_links', array( $this, 'addBulkUploadLink' ), 10, 1 );
         add_action( 'wp_ajax_bpi_preview', array( $this, 'handlePreview' ) );
     }

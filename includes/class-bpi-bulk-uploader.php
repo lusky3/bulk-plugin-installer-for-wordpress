@@ -71,6 +71,8 @@ class BPIBulkUploader {
      *
      * Verifies nonce and capability, validates the uploaded file,
      * and returns plugin data on success or error on failure.
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     public function handleUpload(): void {
         if ( ! $this->verifyAjaxRequest() ) {
@@ -110,12 +112,62 @@ class BPIBulkUploader {
         $headers = $this->extractPluginHeaders( $file_path );
         $slug    = $this->getPluginSlug( $file_path );
 
+        // Move uploaded file to a persistent temp location so it survives the request.
+        $upload_dir  = wp_upload_dir();
+        $bpi_tmp_dir = trailingslashit( $upload_dir['basedir'] ) . 'bpi-tmp/';
+        wp_mkdir_p( $bpi_tmp_dir );
+
+        $dest_path = $bpi_tmp_dir . sanitize_file_name( $slug . '-' . time() . '.zip' );
+        if ( ! move_uploaded_file( $file_path, $dest_path ) && ! copy( $file_path, $dest_path ) ) {
+            wp_send_json_error(
+                array( 'message' => __( 'Failed to save uploaded file.', 'bulk-plugin-installer' ) ),
+                500
+            );
+            return;
+        }
+
+        // Determine install vs update.
+        if ( ! function_exists( 'get_plugins' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php'; // phpcs:ignore PHPMD -- WordPress core file, no namespace available.
+        }
+        $installed_plugins = get_plugins();
+        $action            = 'install';
+        $installed_version = null;
+        foreach ( $installed_plugins as $pfile => $pinfo ) {
+            if ( dirname( $pfile ) === $slug ) {
+                $action            = 'update';
+                $installed_version = $pinfo['Version'] ?? '';
+                break;
+            }
+        }
+
+        // Add to the queue.
+        $queue_manager = new BPIQueueManager();
+        $was_duplicate = $queue_manager->hasDuplicate( $slug );
+        $queue_manager->add( $dest_path, array(
+            'slug'              => $slug,
+            'file_name'         => $file_name,
+            'file_size'         => $file_size,
+            'plugin_name'       => $headers['plugin_name'] ?? '',
+            'plugin_version'    => $headers['version'] ?? '',
+            'plugin_author'     => $headers['author'] ?? '',
+            'plugin_description' => $headers['description'] ?? '',
+            'requires_php'      => $headers['requires_php'] ?? '',
+            'requires_wp'       => $headers['requires_wp'] ?? '',
+            'action'            => $action,
+            'installed_version' => $installed_version,
+        ) );
+
         wp_send_json_success(
             array(
-                'slug'      => $slug,
-                'file_name' => $file_name,
-                'file_size' => $file_size,
-                'headers'   => $headers,
+                'slug'          => $slug,
+                'file_name'     => $file_name,
+                'file_size'     => $file_size,
+                'headers'       => $headers,
+                'action'        => $action,
+                'was_duplicate' => $was_duplicate,
+                'queue_count'   => $queue_manager->getCount(),
+                'queue_size'    => $queue_manager->getTotalSize(),
             )
         );
     }
