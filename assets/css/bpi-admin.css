@@ -41,7 +41,15 @@
 
 #bpi-bulk-upload-app {
 	max-width: 960px;
+	padding: 8px 0 40px;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+#bpi-bulk-upload-wrap > h1 {
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--bpi-text);
+	margin-bottom: 4px;
 }
 
 /* ── Upload Zone ─────────────────────────────────────────── */
@@ -49,12 +57,12 @@
 .bpi-upload-zone {
 	border: 2px dashed var(--bpi-border-hover);
 	border-radius: var(--bpi-radius-lg);
-	padding: 48px 24px;
+	padding: 56px 32px;
 	text-align: center;
 	background: var(--bpi-bg-subtle);
 	transition: all var(--bpi-transition);
 	cursor: pointer;
-	margin: 24px 0;
+	margin: 28px 0 32px;
 	position: relative;
 }
 
@@ -114,16 +122,16 @@
 /* ── Queue Section ───────────────────────────────────────── */
 
 .bpi-queue-section {
-	margin: 24px 0;
+	margin: 32px 0;
 }
 
 .bpi-queue-header {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	margin-bottom: 12px;
+	margin-bottom: 16px;
 	flex-wrap: wrap;
-	gap: 8px;
+	gap: 10px;
 }
 
 .bpi-queue-header h2 {
@@ -148,7 +156,7 @@
 	border: 1px solid var(--bpi-border);
 	border-radius: var(--bpi-radius);
 	background: var(--bpi-bg);
-	margin: 0 0 16px;
+	margin: 0 0 20px;
 	padding: 0;
 	list-style: none;
 	box-shadow: var(--bpi-shadow-sm);
@@ -158,9 +166,9 @@
 .bpi-queue-item {
 	display: flex;
 	align-items: center;
-	padding: 12px 16px;
+	padding: 14px 20px;
 	border-bottom: 1px solid var(--bpi-border);
-	gap: 12px;
+	gap: 16px;
 	transition: background var(--bpi-transition);
 }
 
@@ -255,10 +263,10 @@
 .bpi-preview-actions,
 .bpi-results-actions {
 	display: flex;
-	gap: 10px;
+	gap: 12px;
 	align-items: center;
 	flex-wrap: wrap;
-	margin: 20px 0;
+	margin: 28px 0;
 }
 
 #bpi-bulk-upload-app .button.button-primary,
@@ -267,7 +275,7 @@
 	border-color: var(--bpi-primary);
 	color: #fff;
 	border-radius: 6px;
-	padding: 6px 20px;
+	padding: 8px 24px;
 	font-weight: 600;
 	font-size: 13px;
 	line-height: 1.6;
@@ -296,7 +304,7 @@
 	border: 1px solid var(--bpi-border-hover);
 	color: var(--bpi-text);
 	border-radius: 6px;
-	padding: 6px 16px;
+	padding: 8px 20px;
 	font-weight: 500;
 	font-size: 13px;
 	line-height: 1.6;
@@ -371,13 +379,13 @@
 .bpi-preview-header {
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	margin: 24px 0 16px;
+	gap: 14px;
+	margin: 32px 0 20px;
 }
 
 .bpi-preview-header h2 {
 	margin: 0;
-	font-size: 18px;
+	font-size: 20px;
 	font-weight: 700;
 	color: var(--bpi-text);
 }
@@ -385,8 +393,8 @@
 .bpi-preview-controls {
 	display: flex;
 	align-items: center;
-	gap: 6px;
-	margin-bottom: 14px;
+	gap: 8px;
+	margin-bottom: 18px;
 	flex-wrap: wrap;
 }
 
@@ -421,7 +429,7 @@
 	border: 1px solid var(--bpi-border);
 	border-radius: var(--bpi-radius-lg);
 	background: var(--bpi-bg);
-	margin: 0 0 16px;
+	margin: 0 0 24px;
 	box-shadow: var(--bpi-shadow-sm);
 	overflow: hidden;
 }
@@ -429,9 +437,9 @@
 .bpi-preview-item {
 	display: flex;
 	align-items: flex-start;
-	padding: 16px 18px;
+	padding: 22px 24px;
 	border-bottom: 1px solid var(--bpi-border);
-	gap: 14px;
+	gap: 16px;
 	transition: background var(--bpi-transition);
 }
 
@@ -472,14 +480,14 @@
 .bpi-preview-item__title {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 10px;
 	flex-wrap: wrap;
 	font-size: 14px;
 	line-height: 1.5;
 }
 
 .bpi-preview-item__title strong {
-	font-size: 15px;
+	font-size: 16px;
 	color: var(--bpi-text);
 	overflow-wrap: break-word;
 	word-wrap: break-word;
@@ -488,28 +496,28 @@
 .bpi-preview-item__versions {
 	font-size: 13px;
 	color: var(--bpi-text-secondary);
-	margin-top: 4px;
+	margin-top: 8px;
 	font-weight: 500;
 }
 
 .bpi-preview-item__author {
-	font-size: 12px;
+	font-size: 13px;
 	color: var(--bpi-text-muted);
-	margin-top: 3px;
+	margin-top: 4px;
 }
 
 .bpi-preview-item__desc {
 	font-size: 13px;
 	color: var(--bpi-text-secondary);
-	margin-top: 8px;
-	line-height: 1.55;
+	margin-top: 10px;
+	line-height: 1.6;
 	overflow-wrap: break-word;
 }
 
 .bpi-preview-item__meta {
 	display: flex;
-	gap: 8px;
-	margin-top: 8px;
+	gap: 10px;
+	margin-top: 12px;
 	flex-wrap: wrap;
 }
 
@@ -623,7 +631,7 @@
 /* ── Compatibility Warnings ──────────────────────────────── */
 
 .bpi-preview-item__warnings {
-	margin-top: 10px;
+	margin-top: 14px;
 }
 
 .bpi-compat-warning {
@@ -660,14 +668,14 @@
 /* ── Changelog Section ───────────────────────────────────── */
 
 .bpi-changelog-section {
-	margin-top: 10px;
+	margin-top: 14px;
 	border: 1px solid var(--bpi-border);
 	border-radius: var(--bpi-radius);
 	overflow: hidden;
 }
 
 .bpi-changelog-toggle {
-	padding: 8px 12px;
+	padding: 10px 14px;
 	font-size: 12px;
 	color: var(--bpi-primary);
 	cursor: pointer;
@@ -726,13 +734,13 @@
 .bpi-processing-header {
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	margin: 24px 0 16px;
+	gap: 14px;
+	margin: 32px 0 20px;
 }
 
 .bpi-processing-header h2 {
 	margin: 0;
-	font-size: 18px;
+	font-size: 20px;
 	font-weight: 700;
 	color: var(--bpi-text);
 }
@@ -756,7 +764,7 @@
 	border: 1px solid var(--bpi-border);
 	border-radius: var(--bpi-radius-lg);
 	background: var(--bpi-bg);
-	margin: 0 0 16px;
+	margin: 0 0 24px;
 	box-shadow: var(--bpi-shadow-sm);
 	overflow: hidden;
 }
@@ -764,9 +772,9 @@
 .bpi-processing-item {
 	display: flex;
 	align-items: center;
-	padding: 14px 18px;
+	padding: 16px 22px;
 	border-bottom: 1px solid var(--bpi-border);
-	gap: 12px;
+	gap: 14px;
 	transition: all var(--bpi-transition);
 }
 
@@ -854,13 +862,13 @@
 .bpi-results-header {
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	margin: 24px 0 16px;
+	gap: 14px;
+	margin: 32px 0 20px;
 }
 
 .bpi-results-header h2 {
 	margin: 0;
-	font-size: 18px;
+	font-size: 20px;
 	font-weight: 700;
 	color: var(--bpi-text);
 }
@@ -878,15 +886,15 @@
 
 .bpi-results-summary {
 	display: flex;
-	gap: 14px;
-	margin-bottom: 20px;
+	gap: 16px;
+	margin-bottom: 28px;
 	flex-wrap: wrap;
 }
 
 .bpi-summary-card {
 	flex: 1;
 	min-width: 120px;
-	padding: 20px;
+	padding: 24px;
 	border-radius: var(--bpi-radius-lg);
 	text-align: center;
 	border: 1px solid var(--bpi-border);
@@ -948,7 +956,7 @@
 	border: 1px solid var(--bpi-border);
 	border-radius: var(--bpi-radius-lg);
 	background: var(--bpi-bg);
-	margin: 0 0 16px;
+	margin: 0 0 24px;
 	box-shadow: var(--bpi-shadow-sm);
 	overflow: hidden;
 }
@@ -956,9 +964,9 @@
 .bpi-results-item {
 	display: flex;
 	align-items: flex-start;
-	padding: 14px 18px;
+	padding: 16px 22px;
 	border-bottom: 1px solid var(--bpi-border);
-	gap: 12px;
+	gap: 14px;
 }
 
 .bpi-results-item:last-child {
