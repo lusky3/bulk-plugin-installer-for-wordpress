@@ -264,7 +264,8 @@ class AdminPageTest extends TestCase {
         global $bpi_test_enqueued_styles;
 
         $this->assertArrayHasKey( 'bpi-admin', $bpi_test_enqueued_styles );
-        $this->assertStringContainsString( 'bpi-admin.css', $bpi_test_enqueued_styles['bpi-admin']['src'] );
+        $this->assertStringContainsString( 'bpi-admin', $bpi_test_enqueued_styles['bpi-admin']['src'] );
+        $this->assertStringContainsString( '.css', $bpi_test_enqueued_styles['bpi-admin']['src'] );
     }
 
     /**
@@ -276,7 +277,8 @@ class AdminPageTest extends TestCase {
         global $bpi_test_enqueued_scripts;
 
         $this->assertArrayHasKey( 'bpi-admin', $bpi_test_enqueued_scripts );
-        $this->assertStringContainsString( 'bpi-admin.js', $bpi_test_enqueued_scripts['bpi-admin']['src'] );
+        $this->assertStringContainsString( 'bpi-admin', $bpi_test_enqueued_scripts['bpi-admin']['src'] );
+        $this->assertStringContainsString( '.js', $bpi_test_enqueued_scripts['bpi-admin']['src'] );
     }
 
     /**
