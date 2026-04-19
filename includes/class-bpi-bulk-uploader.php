@@ -75,8 +75,6 @@ class BPIBulkUploader {
      * and returns plugin data on success or error on failure.
      *
      * @since 1.0.0
-     *
-     * @SuppressWarnings("PHPMD.CyclomaticComplexity")
      */
     public function handleUpload(): void {
         if ( ! $this->verifyAjaxRequest() ) {

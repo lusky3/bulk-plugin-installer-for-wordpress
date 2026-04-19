@@ -395,8 +395,6 @@ class BPIBatchRollbackManager {
      * Verifies nonce and capability, then performs the batch rollback.
      *
      * @since 1.0.0
-     *
-     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function handleAjaxRollback(): void {
         if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'bpi_batch_rollback' ) ) {
