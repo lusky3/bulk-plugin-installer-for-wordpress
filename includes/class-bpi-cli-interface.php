@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Integrates with BPIBulkUploader, BPIQueueManager, BPICompatibilityChecker,
  * BPIPluginProcessor, and BPIProfileManager to provide CLI-based bulk operations.
+ *
+ * @since 1.0.0
  */
 class BPICLIInterface {
 
@@ -85,6 +87,8 @@ class BPICLIInterface {
      * Register WP-CLI commands.
      *
      * Registers the `wp bulk-plugin install` command with WP-CLI.
+     *
+     * @since 1.0.0
      */
     public function registerCommands(): void {
         if ( ! class_exists( 'WP_CLI' ) ) {
@@ -128,6 +132,8 @@ class BPICLIInterface {
      *
      * Validates file paths, uploads to queue, displays preview table,
      * prompts for confirmation, processes plugins, and outputs summary.
+     *
+     * @since 1.0.0
      *
      * @param array $args       Positional arguments (file paths).
      * @param array $assoc_args Associative arguments (--profile, --dry-run, --yes).
@@ -205,6 +211,8 @@ class BPICLIInterface {
      *
      * Shows columns: Name, Version, Action, Installed Version.
      *
+     * @since 1.0.0
+     *
      * @param array $plugins Array of plugin data arrays.
      */
     public function displayPreviewTable( array $plugins ): void {
@@ -233,6 +241,8 @@ class BPICLIInterface {
 
     /**
      * Process plugins with a progress bar and per-plugin status output.
+     *
+     * @since 1.0.0
      *
      * @param array $plugins Array of plugin data arrays.
      * @param bool  $dry_run Whether to simulate without making changes.
@@ -500,13 +510,13 @@ class BPICLIInterface {
         }
 
         $plugins = array();
+        $installed_plugins = function_exists( 'get_plugins' ) ? get_plugins() : array();
         foreach ( $profile_plugins as $pp ) {
             $slug = $pp['slug'] ?? '';
             $name = $pp['name'] ?? $slug;
             $version = $pp['version'] ?? '';
 
             // Determine action (install vs update).
-            $installed_plugins = function_exists( 'get_plugins' ) ? get_plugins() : array();
             $action            = 'install';
             $installed_version = null;
             $plugin_file       = $slug . '/' . $slug . '.php';

@@ -7,11 +7,17 @@
  * @package BulkPluginInstaller
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 /**
  * Class BPINotificationManager
  *
  * Handles email notifications and WordPress admin notices for batch
  * install/update and rollback operations.
+ *
+ * @since 1.0.0
  */
 class BPINotificationManager {
 
@@ -25,6 +31,8 @@ class BPINotificationManager {
     /**
      * Constructor.
      *
+     * @since 1.0.0
+     *
      * @param BPISettingsManager $settings Settings manager dependency.
      */
     public function __construct( BPISettingsManager $settings ) {
@@ -33,6 +41,8 @@ class BPINotificationManager {
 
     /**
      * Register WordPress hooks for displaying admin notices.
+     *
+     * @since 1.0.0
      */
     public function registerHooks(): void {
         add_action( 'admin_notices', array( $this, 'displayAdminNotices' ) );
@@ -51,6 +61,8 @@ class BPINotificationManager {
      *     @type array  $plugins   Array of plugin results, each with slug, name, action, status.
      *     @type array  $summary   Counts: total, installed, updated, failed.
      * }
+     *
+     * @since 1.0.0
      */
     public function sendBatchEmail( array $batch_summary ): void {
         if ( ! $this->settings->getOption( 'bpi_email_notifications' ) ) {
@@ -113,6 +125,9 @@ class BPINotificationManager {
             $summary['failed'] ?? 0
         ) . "\n";
 
+        $subject = apply_filters( 'bpi_batch_email_subject', $subject, $batch_summary );
+        $body    = apply_filters( 'bpi_batch_email_body', $body, $batch_summary );
+
         wp_mail( $recipients, $subject, $body );
     }
 
@@ -130,6 +145,8 @@ class BPINotificationManager {
      *     @type array  $plugins   Array of plugin rollback results with slug, name, status.
      *     @type string $reason    Reason for rollback.
      * }
+     *
+     * @since 1.0.0
      */
     public function sendRollbackEmail( array $rollback_summary ): void {
         if ( ! $this->settings->getOption( 'bpi_email_notifications' ) ) {
@@ -186,6 +203,9 @@ class BPINotificationManager {
             $body  .= sprintf( '- %s: %s', $name, $status ) . "\n";
         }
 
+        $subject = apply_filters( 'bpi_rollback_email_subject', $subject, $rollback_summary );
+        $body    = apply_filters( 'bpi_rollback_email_body', $body, $rollback_summary );
+
         wp_mail( $recipients, $subject, $body );
     }
 
@@ -197,6 +217,8 @@ class BPINotificationManager {
      *
      * @param string $message Notice message text.
      * @param string $type    Notice type: 'success', 'error', 'warning', 'info'.
+     *
+     * @since 1.0.0
      */
     public function queueAdminNotice( string $message, string $type = 'success' ): void {
         $user_id       = get_current_user_id();
@@ -219,6 +241,8 @@ class BPINotificationManager {
      * Display queued admin notices and clear the transient.
      *
      * Hooked to `admin_notices` via registerHooks().
+     *
+     * @since 1.0.0
      */
     public function displayAdminNotices(): void {
         $user_id       = get_current_user_id();
@@ -230,8 +254,10 @@ class BPINotificationManager {
         }
 
         foreach ( $notices as $notice ) {
-            $type    = esc_attr( $notice['type'] ?? 'success' );
-            $message = wp_kses_post( $notice['message'] ?? '' );
+            $allowed_types = array( 'success', 'error', 'warning', 'info' );
+            $type          = in_array( $notice['type'] ?? '', $allowed_types, true ) ? $notice['type'] : 'info';
+            $type          = esc_attr( $type );
+            $message       = wp_kses_post( $notice['message'] ?? '' );
             printf(
                 '<div class="notice notice-%s is-dismissible"><p>%s</p></div>',
                 $type,
@@ -249,6 +275,8 @@ class BPINotificationManager {
      * configured in the `bpi_email_recipients` setting.
      *
      * @return array List of email addresses.
+     *
+     * @since 1.0.0
      */
     public function getEmailRecipients(): array {
         $recipients = array();

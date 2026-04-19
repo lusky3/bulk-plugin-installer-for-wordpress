@@ -18,6 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Handles admin menu registration, the "Bulk Upload" link on the
  * Add New Plugins screen, page rendering, and asset enqueueing.
+ *
+ * @since 1.0.0
  */
 class BPIAdminPage {
 
@@ -54,6 +56,8 @@ class BPIAdminPage {
 
     /**
      * Register hooks for the admin page.
+     *
+     * @since 1.0.0
      */
     public function registerHooks(): void {
         add_action( 'admin_menu', array( $this, 'registerMenu' ) );
@@ -66,12 +70,14 @@ class BPIAdminPage {
      * Register the submenu page under Plugins.
      *
      * Only adds the page if the current user has the `install_plugins` capability.
+     *
+     * @since 1.0.0
      */
     public function registerMenu(): void {
         add_submenu_page(
             'plugins.php',
-            __( self::PAGE_TITLE, 'bulk-plugin-installer' ),
-            __( self::MENU_TITLE, 'bulk-plugin-installer' ),
+            __( 'Bulk Upload Plugins', 'bulk-plugin-installer' ),
+            __( 'Bulk Upload', 'bulk-plugin-installer' ),
             'install_plugins',
             self::MENU_SLUG,
             array( $this, 'renderPage' )
@@ -83,12 +89,14 @@ class BPIAdminPage {
      *
      * Only adds the page if the current user has the `manage_network_plugins` capability.
      * Called from the bootstrap class on the `network_admin_menu` hook.
+     *
+     * @since 1.0.0
      */
     public function registerNetworkMenu(): void {
         add_submenu_page(
             'plugins.php',
-            __( self::PAGE_TITLE, 'bulk-plugin-installer' ),
-            __( self::MENU_TITLE, 'bulk-plugin-installer' ),
+            __( 'Bulk Upload Plugins', 'bulk-plugin-installer' ),
+            __( 'Bulk Upload', 'bulk-plugin-installer' ),
             'manage_network_plugins',
             self::MENU_SLUG,
             array( $this, 'renderPage' )
@@ -100,6 +108,8 @@ class BPIAdminPage {
      *
      * Filters the plugin install action links to append a link
      * pointing to the bulk upload admin page.
+     *
+     * @since 1.0.0
      *
      * @param array $action_links Existing action links.
      * @return array Modified action links with "Bulk Upload" appended.
@@ -114,7 +124,7 @@ class BPIAdminPage {
         $action_links[] = sprintf(
             '<a href="%s" class="bpi-bulk-upload-link">%s</a>',
             esc_url( $url ),
-            esc_html__( self::MENU_TITLE, 'bulk-plugin-installer' )
+            esc_html__( 'Bulk Upload', 'bulk-plugin-installer' )
         );
 
         return $action_links;
@@ -126,6 +136,8 @@ class BPIAdminPage {
      * Outputs the page wrapper with a heading, nonce field, and
      * container div that JavaScript will populate.
      * In Network Admin context, checks `manage_network_plugins` capability.
+     *
+     * @since 1.0.0
      */
     public function renderPage(): void {
         $required_cap = $this->getRequiredCapability();
@@ -134,7 +146,7 @@ class BPIAdminPage {
         }
 
         echo '<div class="wrap" id="bpi-bulk-upload-wrap">';
-        echo '<h1>' . esc_html__( self::PAGE_TITLE, 'bulk-plugin-installer' ) . '</h1>';
+        echo '<h1>' . esc_html__( 'Bulk Upload Plugins', 'bulk-plugin-installer' ) . '</h1>';
         wp_nonce_field( self::NONCE_ACTION, 'bpi_bulk_upload_nonce' );
         echo '<div id="bpi-bulk-upload-app"></div>';
         echo '</div>';
@@ -142,6 +154,8 @@ class BPIAdminPage {
 
     /**
      * Enqueue JavaScript and CSS assets for the admin page.
+     *
+     * @since 1.0.0
      *
      * @param string $hook_suffix The current admin page hook suffix.
      */
@@ -174,8 +188,14 @@ class BPIAdminPage {
             'uploadNonce'      => wp_create_nonce( 'bpi_upload' ),
             'queueRemoveNonce' => wp_create_nonce( 'bpi_queue_remove' ),
             'previewNonce'     => wp_create_nonce( self::PREVIEW_NONCE_ACTION ),
-            'processNonce'     => wp_create_nonce( 'bpi_process' ),
+            'processNonce'       => wp_create_nonce( 'bpi_process' ),
+            'dryRunNonce'        => wp_create_nonce( 'bpi_process' ),
+            'rollbackNonce'      => wp_create_nonce( 'bpi_batch_rollback' ),
+            'saveProfileNonce'   => wp_create_nonce( 'bpi_save_profile' ),
+            'deleteProfileNonce' => wp_create_nonce( 'bpi_delete_profile' ),
             'isNetworkAdmin'   => $is_network_admin,
+            'maxFileSize'      => (int) get_option( 'bpi_max_file_size', 0 ),
+            'maxPlugins'       => (int) get_option( 'bpi_max_plugins', 20 ),
             'i18n'             => array(
                 'dropZoneLabel'          => __( 'Drop ZIP files here or click to browse', 'bulk-plugin-installer' ),
                 'dropZoneText'           => __( 'Drag & drop plugin ZIP files here', 'bulk-plugin-installer' ),
@@ -274,6 +294,12 @@ class BPIAdminPage {
                 'dryRunCompleteAnnounce' => __( 'Dry run complete.', 'bulk-plugin-installer' ),
                 /* translators: 1: count, 2: formatted size */
                 'queueSummary'           => __( '%1$s file(s) — %2$s', 'bulk-plugin-installer' ),
+                'confirmRollback'        => __( 'Are you sure you want to rollback the entire batch? This will revert all installed/updated plugins.', 'bulk-plugin-installer' ),
+                'enterProfileName'       => __( 'Enter a name for this profile:', 'bulk-plugin-installer' ),
+                /* translators: %d: max plugins allowed */
+                'queueLimitExceeded'     => __( 'Queue limit of %d plugins would be exceeded.', 'bulk-plugin-installer' ),
+                /* translators: %d: max file size in MB */
+                'fileTooLarge'           => __( 'exceeds %dMB limit', 'bulk-plugin-installer' ),
             ),
         );
 
@@ -295,6 +321,8 @@ class BPIAdminPage {
      * checks, determines install vs. update action, extracts changelog data,
      * and returns JSON preview data. In Network Admin context, adds a
      * `network_activate` field to each preview item.
+     *
+     * @since 1.0.0
      */
     public function handlePreview(): void {
         // Verify nonce.
@@ -356,6 +384,8 @@ class BPIAdminPage {
         foreach ( $queue as $item ) {
             $preview_items[] = $this->buildPreviewItem( $item, $installed_by_slug, $changelog_extractor, $is_network_admin );
         }
+
+        $preview_items = apply_filters( 'bpi_preview_items', $preview_items, $queue );
 
         wp_send_json_success( array( 'plugins' => $preview_items ) );
     }
@@ -447,6 +477,8 @@ class BPIAdminPage {
      * In Network Admin context (multisite), requires `manage_network_plugins`.
      * On single sites or individual sites within multisite, requires `install_plugins`.
      *
+     * @since 1.0.0
+     *
      * @return string The required capability name.
      */
     public function getRequiredCapability(): string {
@@ -458,6 +490,8 @@ class BPIAdminPage {
 
     /**
      * Check if the current context is Network Admin within a multisite.
+     *
+     * @since 1.0.0
      *
      * @return bool True if in Network Admin context.
      */

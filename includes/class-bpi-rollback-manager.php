@@ -21,6 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Before an update, the existing plugin directory is copied to a
  * backup location under `wp-content/bpi-backups/`. On failure the
  * backup is restored; on success it is cleaned up.
+ *
+ * @since 1.0.0
  */
 class BPIRollbackManager {
 
@@ -32,6 +34,8 @@ class BPIRollbackManager {
      *
      * @param string $plugin_dir Absolute path to the plugin directory.
      * @return string|\WP_Error Backup directory path on success, WP_Error on failure.
+     *
+     * @since 1.0.0
      */
     public function createBackup( string $plugin_dir ): string|\WP_Error {
         $plugin_dir = rtrim( $plugin_dir, '/\\' );
@@ -95,6 +99,8 @@ class BPIRollbackManager {
      * @param string $backup_path Absolute path to the backup directory.
      * @param string $plugin_dir  Absolute path to the plugin directory.
      * @return bool|\WP_Error True on success, WP_Error on failure.
+     *
+     * @since 1.0.0
      */
     public function restoreBackup( string $backup_path, string $plugin_dir ): bool|\WP_Error {
         $backup_path = rtrim( $backup_path, '/\\' );
@@ -150,6 +156,8 @@ class BPIRollbackManager {
      * Remove a backup directory after a successful operation.
      *
      * @param string $backup_path Absolute path to the backup directory.
+     *
+     * @since 1.0.0
      */
     public function cleanupBackup( string $backup_path ): void {
         $backup_path = rtrim( $backup_path, '/\\' );
@@ -165,6 +173,8 @@ class BPIRollbackManager {
      * Used to clean up after a failed new install.
      *
      * @param string $plugin_dir Absolute path to the plugin directory.
+     *
+     * @since 1.0.0
      */
     public function removePartialInstall( string $plugin_dir ): void {
         $plugin_dir = rtrim( $plugin_dir, '/\\' );
@@ -244,7 +254,7 @@ class BPIRollbackManager {
             return false;
         }
 
-        if ( ! is_dir( $destination ) && ! mkdir( $destination, 0755, true ) ) {
+        if ( ! is_dir( $destination ) && ! wp_mkdir_p( $destination ) ) {
             return false;
         }
 
@@ -263,12 +273,13 @@ class BPIRollbackManager {
             new \RecursiveDirectoryIterator( $source, \RecursiveDirectoryIterator::SKIP_DOTS ),
             \RecursiveIteratorIterator::SELF_FIRST
         );
+        $iterator->setMaxDepth( 50 );
 
         foreach ( $iterator as $item ) {
             $target = $destination . DIRECTORY_SEPARATOR . $iterator->getSubPathname();
 
             if ( $item->isDir() ) {
-                if ( ! is_dir( $target ) && ! mkdir( $target, 0755, true ) ) {
+                if ( ! is_dir( $target ) && ! wp_mkdir_p( $target ) ) {
                     return false;
                 }
             } elseif ( ! copy( $item->getPathname(), $target ) ) {
@@ -294,6 +305,7 @@ class BPIRollbackManager {
             new \RecursiveDirectoryIterator( $path, \RecursiveDirectoryIterator::SKIP_DOTS ),
             \RecursiveIteratorIterator::CHILD_FIRST
         );
+        $iterator->setMaxDepth( 50 );
 
         foreach ( $iterator as $item ) {
             $success = $item->isDir()

@@ -17,8 +17,8 @@
 	 */
 	function formatFileSize(bytes) {
 		if (bytes === 0) return '0 B';
-		var units = ['B', 'KB', 'MB', 'GB'];
-		var i = Math.floor(Math.log(bytes) / Math.log(1024));
+		const units = ['B', 'KB', 'MB', 'GB'];
+		let i = Math.floor(Math.log(bytes) / Math.log(1024));
 		if (i >= units.length) i = units.length - 1;
 		return (bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
 	}
@@ -26,7 +26,7 @@
 	/**
 	 * Main BPI Upload App.
 	 */
-	var BPIUpload = {
+	const BPIUpload = {
 		/** @type {Array} Queue of uploaded file data from server responses. */
 		queue: [],
 
@@ -35,6 +35,9 @@
 
 		/** @type {jQuery|null} ARIA live region for announcements. */
 		$liveRegion: null,
+
+		/** @type {HTMLDivElement|null} Reusable element for HTML escaping. */
+		_escDiv: null,
 
 		/**
 		 * Initialize the upload UI.
@@ -51,8 +54,8 @@
 		 * Render the initial UI structure.
 		 */
 		render: function () {
-			var t = this.i18n();
-			var html = '';
+			const t = this.i18n();
+			let html = '';
 
 			// ARIA live region for dynamic announcements.
 			html += '<div id="bpi-live-region" class="bpi-sr-only" aria-live="polite" aria-atomic="true"></div>';
@@ -90,9 +93,9 @@
 		 * Bind all event handlers.
 		 */
 		bindEvents: function () {
-			var self = this;
-			var $zone = $('#bpi-upload-zone');
-			var $input = $('#bpi-file-input');
+			const self = this;
+			const $zone = $('#bpi-upload-zone');
+			const $input = $('#bpi-file-input');
 
 			// Drag-and-drop events.
 			$zone.on('dragenter dragover', function (e) {
@@ -108,7 +111,7 @@
 			});
 
 			$zone.on('drop', function (e) {
-				var files = e.originalEvent.dataTransfer.files;
+				const files = e.originalEvent.dataTransfer.files;
 				if (files && files.length) {
 					self.handleFiles(files);
 				}
@@ -145,7 +148,7 @@
 
 			// Remove item from queue.
 			$(document).on('click', '.bpi-queue-item__remove', function () {
-				var slug = $(this).data('slug');
+				const slug = $(this).data('slug');
 				self.removeFromQueue(slug);
 			});
 
@@ -161,9 +164,9 @@
 		 * Load preview data via AJAX and render the preview screen.
 		 */
 		loadPreview: function () {
-			var self = this;
-			var t = this.i18n();
-			var $btn = $('#bpi-continue-preview');
+			const self = this;
+			const t = this.i18n();
+			const $btn = $('#bpi-continue-preview');
 			$btn.prop('disabled', true).text(t.loadingPreview);
 
 			$.post(bpiAdmin.ajaxUrl, {
@@ -173,7 +176,7 @@
 				if (response.success && response.data && response.data.plugins) {
 					self.showPreviewScreen(response.data.plugins);
 				} else {
-					var msg = (response.data && response.data.message) ? response.data.message : t.failedLoadPreview;
+					const msg = (response.data && response.data.message) ? response.data.message : t.failedLoadPreview;
 					self.showNotice(msg, 'error');
 					$btn.prop('disabled', false).text(t.continueToPreview);
 				}
@@ -189,11 +192,11 @@
 		 * @param {Array} plugins Array of plugin preview data from server.
 		 */
 		showPreviewScreen: function (plugins) {
-			var self = this;
-			var t = this.i18n();
+			const self = this;
+			const t = this.i18n();
 			this.previewPlugins = plugins;
 
-			var html = '';
+			let html = '';
 
 			// ARIA live region.
 			html += '<div id="bpi-live-region" class="bpi-sr-only" aria-live="polite" aria-atomic="true"></div>';
@@ -214,7 +217,7 @@
 
 			// Plugin list.
 			html += '<div id="bpi-preview-list" class="bpi-preview-list" role="list" aria-label="' + this.escAttr(t.pluginsListLabel) + '">';
-			for (var i = 0; i < plugins.length; i++) {
+			for (let i = 0; i < plugins.length; i++) {
 				html += this.renderPreviewItem(plugins[i], i);
 			}
 			html += '</div>';
@@ -244,13 +247,13 @@
 		 * @return {string} HTML string.
 		 */
 		renderPreviewItem: function (plugin, index) {
-			var t = this.i18n();
-			var isUpdate = plugin.action === 'update';
-			var hasIssues = !plugin.compatible;
-			var itemClass = 'bpi-preview-item';
+			const t = this.i18n();
+			const isUpdate = plugin.action === 'update';
+			const hasIssues = !plugin.compatible;
+			let itemClass = 'bpi-preview-item';
 			if (hasIssues) itemClass += ' bpi-preview-item--incompatible';
 
-			var html = '<div class="' + itemClass + '" role="listitem" data-index="' + index + '" data-slug="' + this.escAttr(plugin.slug) + '">';
+			let html = '<div class="' + itemClass + '" role="listitem" data-index="' + index + '" data-slug="' + this.escAttr(plugin.slug) + '">';
 
 			// Checkbox.
 			html += '<div class="bpi-preview-item__check">';
@@ -305,8 +308,8 @@
 			// Compatibility warnings.
 			if (hasIssues && plugin.compatibility_issues && plugin.compatibility_issues.length) {
 				html += '<div class="bpi-preview-item__warnings">';
-				for (var w = 0; w < plugin.compatibility_issues.length; w++) {
-					var issue = plugin.compatibility_issues[w];
+				for (let w = 0; w < plugin.compatibility_issues.length; w++) {
+					const issue = plugin.compatibility_issues[w];
 					html += '<div class="bpi-compat-warning" role="alert">';
 					html += '<span class="dashicons dashicons-warning bpi-warning-icon" aria-hidden="true"></span>';
 					html += '<span>' + this.esc(issue.message) + '</span>';
@@ -324,15 +327,15 @@
 				html += '<summary class="bpi-changelog-toggle" aria-label="' + this.escAttr(t.toggleChangelogLabel.replace('%s', plugin.plugin_name)) + '">' + this.esc(t.changelog) + '</summary>';
 				if (plugin.changelog && plugin.changelog.entries && plugin.changelog.entries.length) {
 					html += '<div class="bpi-changelog-content">';
-					for (var c = 0; c < plugin.changelog.entries.length; c++) {
-						var entry = plugin.changelog.entries[c];
+					for (let c = 0; c < plugin.changelog.entries.length; c++) {
+						const entry = plugin.changelog.entries[c];
 						html += '<div class="bpi-changelog-entry">';
 						html += '<strong>' + this.esc(entry.version);
 						if (entry.date) html += ' — ' + this.esc(entry.date);
 						html += '</strong>';
 						if (entry.changes && entry.changes.length) {
 							html += '<ul>';
-							for (var ch = 0; ch < entry.changes.length; ch++) {
+							for (let ch = 0; ch < entry.changes.length; ch++) {
 								html += '<li>' + this.esc(entry.changes[ch]) + '</li>';
 							}
 							html += '</ul>';
@@ -378,39 +381,42 @@
 		 * Bind event handlers for the preview screen.
 		 */
 		bindPreviewEvents: function () {
-			var self = this;
-			var t = this.i18n();
+			const self = this;
+			const t = this.i18n();
+
+			// Clean up any previous preview bindings.
+			$(document).off('.bpiPreview');
 
 			// Back to queue.
-			$(document).on('click', '#bpi-back-to-queue', function () {
+			$(document).on('click.bpiPreview', '#bpi-back-to-queue', function () {
 				self.render();
 				self.bindEvents();
 				self.renderQueue();
 			});
 
 			// Select All.
-			$(document).on('click', '#bpi-select-all', function () {
+			$(document).on('click.bpiPreview', '#bpi-select-all', function () {
 				$('.bpi-preview-checkbox').prop('checked', true);
 				self.updatePreviewState();
 				self.announce(t.allSelected);
 			});
 
 			// Deselect All.
-			$(document).on('click', '#bpi-deselect-all', function () {
+			$(document).on('click.bpiPreview', '#bpi-deselect-all', function () {
 				$('.bpi-preview-checkbox').prop('checked', false);
 				self.updatePreviewState();
 				self.announce(t.allDeselected);
 			});
 
 			// Individual checkbox change.
-			$(document).on('change', '.bpi-preview-checkbox', function () {
+			$(document).on('change.bpiPreview', '.bpi-preview-checkbox', function () {
 				self.updatePreviewState();
 			});
 
 			// Override compatibility warning.
-			$(document).on('click', '.bpi-override-compat', function () {
-				var idx = $(this).data('index');
-				var $item = $('[data-index="' + idx + '"].bpi-preview-item');
+			$(document).on('click.bpiPreview', '.bpi-override-compat', function () {
+				const idx = $(this).data('index');
+				const $item = $('[data-index="' + idx + '"].bpi-preview-item');
 				$item.removeClass('bpi-preview-item--incompatible');
 				$item.find('.bpi-preview-item__warnings').remove();
 				$item.find('.bpi-preview-checkbox').prop('checked', true);
@@ -419,14 +425,14 @@
 			});
 
 			// Install Selected.
-			$(document).on('click', '#bpi-install-selected', function () {
+			$(document).on('click.bpiPreview', '#bpi-install-selected', function () {
 				if (!$(this).prop('disabled')) {
 					self.startProcessing(false);
 				}
 			});
 
 			// Dry Run.
-			$(document).on('click', '#bpi-dry-run', function () {
+			$(document).on('click.bpiPreview', '#bpi-dry-run', function () {
 				if (!$(this).prop('disabled')) {
 					self.startProcessing(true);
 				}
@@ -437,12 +443,12 @@
 		 * Update the preview state: count checked plugins, toggle Install button.
 		 */
 		updatePreviewState: function () {
-			var t = this.i18n();
-			var checked = $('.bpi-preview-checkbox:checked').length;
-			var total = $('.bpi-preview-checkbox').length;
-			var $installBtn = $('#bpi-install-selected');
-			var $dryRunBtn = $('#bpi-dry-run');
-			var $count = $('#bpi-preview-count');
+			const t = this.i18n();
+			const checked = $('.bpi-preview-checkbox:checked').length;
+			const total = $('.bpi-preview-checkbox').length;
+			const $installBtn = $('#bpi-install-selected');
+			const $dryRunBtn = $('#bpi-dry-run');
+			const $count = $('#bpi-preview-count');
 
 			$count.text(t.selectedCount.replace('%1$s', checked).replace('%2$s', total));
 
@@ -464,21 +470,21 @@
 		 * @param {boolean} dryRun Whether to perform a dry run.
 		 */
 		startProcessing: function (dryRun) {
-			var self = this;
-			var plugins = [];
+			const self = this;
+			const plugins = [];
 
 			$('.bpi-preview-item').each(function () {
-				var $item = $(this);
-				var idx = parseInt($item.data('index'), 10);
-				var $checkbox = $item.find('.bpi-preview-checkbox');
+				const $item = $(this);
+				const idx = parseInt($item.data('index'), 10);
+				const $checkbox = $item.find('.bpi-preview-checkbox');
 
 				if (!$checkbox.prop('checked')) return;
 
-				var previewData = self.previewPlugins[idx];
+				const previewData = self.previewPlugins[idx];
 				if (!previewData) return;
 
-				var activate = $item.find('.bpi-activate-toggle').prop('checked');
-				var networkActivate = bpiAdmin.isNetworkAdmin ? $item.find('.bpi-network-activate-toggle').prop('checked') : false;
+				const activate = $item.find('.bpi-activate-toggle').prop('checked');
+				const networkActivate = bpiAdmin.isNetworkAdmin ? $item.find('.bpi-network-activate-toggle').prop('checked') : false;
 
 				plugins.push({
 					slug: previewData.slug,
@@ -498,7 +504,7 @@
 
 			this.showProcessingScreen(plugins, dryRun);
 
-			var postData = {
+			const postData = {
 				action: 'bpi_process',
 				_wpnonce: bpiAdmin.processNonce || bpiAdmin.nonce,
 				selected_plugins: plugins,
@@ -506,14 +512,14 @@
 			};
 
 			// Mark all as installing sequentially via single AJAX call.
-			var slugMap = {};
-			for (var i = 0; i < plugins.length; i++) {
+			const slugMap = {};
+			for (let i = 0; i < plugins.length; i++) {
 				slugMap[plugins[i].slug] = i;
 			}
 
 			// Simulate sequential status updates.
-			var currentIdx = 0;
-			var statusInterval = setInterval(function () {
+			let currentIdx = 0;
+			const statusInterval = setInterval(function () {
 				if (currentIdx < plugins.length) {
 					self.updatePluginStatus(plugins[currentIdx].slug, 'installing');
 					self.announce(self.i18n().installingPlugin.replace('%s', plugins[currentIdx].plugin_name));
@@ -525,13 +531,13 @@
 				clearInterval(statusInterval);
 
 				if (response.success && response.data) {
-					var results = response.data.results || [];
-					var summary = response.data.summary || {};
-					var batchId = response.data.batch_id || '';
+					const results = response.data.results || [];
+					const summary = response.data.summary || {};
+					const batchId = response.data.batch_id || '';
 
 					// Update each plugin's final status.
-					for (var r = 0; r < results.length; r++) {
-						var res = results[r];
+					for (let r = 0; r < results.length; r++) {
+						const res = results[r];
 						self.updatePluginStatus(res.slug, res.status, res.messages);
 					}
 
@@ -540,7 +546,7 @@
 						self.showResultsScreen(results, summary, batchId, dryRun);
 					}, 600);
 				} else {
-					var msg = (response.data && response.data.message) ? response.data.message : self.i18n().processingFailed;
+					const msg = (response.data && response.data.message) ? response.data.message : self.i18n().processingFailed;
 					self.showProcessingError(msg);
 				}
 			}).fail(function () {
@@ -556,8 +562,8 @@
 		 * @param {boolean} dryRun  Whether this is a dry run.
 		 */
 		showProcessingScreen: function (plugins, dryRun) {
-			var t = this.i18n();
-			var html = '';
+			const t = this.i18n();
+			let html = '';
 
 			// ARIA live region for status announcements.
 			html += '<div id="bpi-live-region" class="bpi-sr-only" aria-live="polite" aria-atomic="true"></div>';
@@ -570,8 +576,8 @@
 
 			// Plugin status list.
 			html += '<div id="bpi-processing-list" class="bpi-processing-list" role="list" aria-label="' + this.escAttr(t.processingStatusLabel) + '">';
-			for (var i = 0; i < plugins.length; i++) {
-				var p = plugins[i];
+			for (let i = 0; i < plugins.length; i++) {
+				const p = plugins[i];
 				html += '<div class="bpi-processing-item bpi-processing-item--pending" role="listitem" data-slug="' + this.escAttr(p.slug) + '">';
 				html += '<span class="bpi-processing-item__icon dashicons dashicons-clock" aria-hidden="true"></span>';
 				html += '<div class="bpi-processing-item__info">';
@@ -602,8 +608,8 @@
 		 * @param {Array}  [messages] Optional messages array.
 		 */
 		updatePluginStatus: function (slug, status, messages) {
-			var t = this.i18n();
-			var $item = $('.bpi-processing-item[data-slug="' + slug + '"]');
+			const t = this.i18n();
+			const $item = $('.bpi-processing-item[data-slug="' + slug + '"]');
 			if (!$item.length) return;
 
 			// Remove previous status classes.
@@ -611,10 +617,10 @@
 			$item.addClass('bpi-processing-item--' + status);
 
 			// Update icon.
-			var $icon = $item.find('.bpi-processing-item__icon');
+			const $icon = $item.find('.bpi-processing-item__icon');
 			$icon.removeClass('dashicons-clock dashicons-update dashicons-yes-alt dashicons-dismiss bpi-spin');
 
-			var iconMap = {
+			const iconMap = {
 				pending: 'dashicons-clock',
 				installing: 'dashicons-update bpi-spin',
 				success: 'dashicons-yes-alt',
@@ -623,7 +629,7 @@
 			$icon.addClass(iconMap[status] || 'dashicons-clock');
 
 			// Update status text.
-			var statusLabels = {
+			const statusLabels = {
 				pending: t.pending,
 				installing: t.installing,
 				success: t.success,
@@ -632,7 +638,7 @@
 			$item.find('.bpi-processing-item__status').text(statusLabels[status] || status);
 
 			// Announce to screen readers.
-			var pluginName = $item.find('strong').text();
+			const pluginName = $item.find('strong').text();
 			$('#bpi-processing-status').text(pluginName + ': ' + (statusLabels[status] || status));
 		},
 
@@ -642,19 +648,19 @@
 		 * @param {string} message Error message.
 		 */
 		showProcessingError: function (message) {
-			var t = this.i18n();
-			var $header = $('.bpi-processing-header');
+			const t = this.i18n();
+			const $header = $('.bpi-processing-header');
 			$header.find('.bpi-processing-spinner').removeClass('bpi-spin').addClass('dashicons-warning');
 			$header.find('h2').text(t.processingError);
 
-			var html = '<div class="bpi-notice bpi-notice--error" role="alert">' + this.esc(message) + '</div>';
+			let html = '<div class="bpi-notice bpi-notice--error" role="alert">' + this.esc(message) + '</div>';
 			html += '<div class="bpi-results-actions">';
 			html += '<button type="button" id="bpi-back-to-upload" class="button button-primary" aria-label="' + this.escAttr(t.backToUploadLabel) + '">' + this.esc(t.backToUpload) + '</button>';
 			html += '</div>';
 
 			this.$app.find('.bpi-processing-list').after(html);
 
-			$(document).on('click', '#bpi-back-to-upload', function () {
+			$(document).off('.bpiResults').on('click.bpiResults', '#bpi-back-to-upload', function () {
 				BPIUpload.render();
 				BPIUpload.bindEvents();
 				BPIUpload.renderQueue();
@@ -672,9 +678,9 @@
 		 * @param {boolean} dryRun  Whether this was a dry run.
 		 */
 		showResultsScreen: function (results, summary, batchId, dryRun) {
-			var self = this;
-			var t = this.i18n();
-			var html = '';
+			const self = this;
+			const t = this.i18n();
+			let html = '';
 
 			// ARIA live region.
 			html += '<div id="bpi-live-region" class="bpi-sr-only" aria-live="polite" aria-atomic="true"></div>';
@@ -715,11 +721,11 @@
 
 			// Per-plugin result list.
 			html += '<div class="bpi-results-list" role="list" aria-label="' + this.escAttr(t.perPluginResultsLabel) + '">';
-			for (var i = 0; i < results.length; i++) {
-				var r = results[i];
-				var statusClass = r.status === 'success' ? 'success' : 'failed';
-				var statusIcon = r.status === 'success' ? 'dashicons-yes-alt' : 'dashicons-dismiss';
-				var statusText = r.status === 'success' ? t.success : t.failed;
+			for (let i = 0; i < results.length; i++) {
+				const r = results[i];
+				const statusClass = r.status === 'success' ? 'success' : 'failed';
+				const statusIcon = r.status === 'success' ? 'dashicons-yes-alt' : 'dashicons-dismiss';
+				const statusText = r.status === 'success' ? t.success : t.failed;
 
 				html += '<div class="bpi-results-item bpi-results-item--' + statusClass + '" role="listitem">';
 				html += '<span class="bpi-results-item__icon dashicons ' + statusIcon + '" aria-hidden="true"></span>';
@@ -728,7 +734,7 @@
 				html += ' <span class="bpi-results-item__status-text">' + this.esc(statusText) + '</span>';
 				if (r.messages && r.messages.length) {
 					html += '<div class="bpi-results-item__messages">';
-					for (var m = 0; m < r.messages.length; m++) {
+					for (let m = 0; m < r.messages.length; m++) {
 						html += '<p>' + this.esc(r.messages[m]) + '</p>';
 					}
 					html += '</div>';
@@ -752,7 +758,7 @@
 			}
 
 			// Save as Profile button (only if any successes and not dry run).
-			var hasSuccess = (summary.installed || 0) + (summary.updated || 0) > 0;
+			const hasSuccess = (summary.installed || 0) + (summary.updated || 0) > 0;
 			if (!dryRun && hasSuccess) {
 				html += '<button type="button" id="bpi-save-profile" class="button button-secondary" aria-label="' + this.escAttr(t.saveProfileLabel) + '">';
 				html += this.esc(t.saveAsProfile);
@@ -766,17 +772,76 @@
 			this.$liveRegion = $('#bpi-live-region');
 
 			// Bind results screen events.
-			$(document).on('click', '#bpi-back-to-upload', function () {
+			$(document).off('.bpiResults').on('click.bpiResults', '#bpi-back-to-upload', function () {
 				self.queue = [];
 				self.render();
 				self.bindEvents();
+			});
+
+			// Rollback batch handler.
+			$(document).on('click.bpiResults', '#bpi-rollback-batch', function () {
+				if (!confirm(t.confirmRollback || 'Are you sure you want to rollback the entire batch? This will revert all installed/updated plugins.')) return;
+				const $btn = $(this);
+				const batchId = $btn.data('batch-id');
+				$btn.prop('disabled', true).text('Rolling back...');
+				$.post(bpiAdmin.ajaxUrl, {
+					action: 'bpi_batch_rollback',
+					_wpnonce: bpiAdmin.rollbackNonce,
+					batch_id: batchId
+				}, function (response) {
+					if (response.success) {
+						self.showNotice(response.data.message || 'Rollback complete.', 'success');
+						$btn.text('Rolled Back').prop('disabled', true);
+					} else {
+						self.showNotice((response.data && response.data.message) || 'Rollback failed.', 'error');
+						$btn.prop('disabled', false).text(t.rollbackBatch);
+					}
+				}).fail(function () {
+					self.showNotice('Network error during rollback.', 'error');
+					$btn.prop('disabled', false).text(t.rollbackBatch);
+				});
+			});
+
+			// Save as profile handler.
+			$(document).on('click.bpiResults', '#bpi-save-profile', function () {
+				const profileName = prompt(t.enterProfileName || 'Enter a name for this profile:');
+				if (!profileName || !profileName.trim()) return;
+				const $btn = $(this);
+				$btn.prop('disabled', true);
+				const plugins = [];
+				for (let i = 0; i < results.length; i++) {
+					if (results[i].status === 'success') {
+						plugins.push({
+							slug: results[i].slug,
+							name: results[i].plugin_name || results[i].slug,
+							version: results[i].plugin_version || ''
+						});
+					}
+				}
+				$.post(bpiAdmin.ajaxUrl, {
+					action: 'bpi_save_profile',
+					_wpnonce: bpiAdmin.saveProfileNonce,
+					name: profileName.trim(),
+					plugins: plugins
+				}, function (response) {
+					if (response.success) {
+						self.showNotice(response.data.message || 'Profile saved.', 'success');
+						$btn.text('Saved!').prop('disabled', true);
+					} else {
+						self.showNotice((response.data && response.data.message) || 'Failed to save profile.', 'error');
+						$btn.prop('disabled', false);
+					}
+				}).fail(function () {
+					self.showNotice('Network error saving profile.', 'error');
+					$btn.prop('disabled', false);
+				});
 			});
 
 			// Focus management: move focus to the results heading.
 			this.$app.find('.bpi-results-header h2').attr('tabindex', '-1').trigger('focus');
 
 			// Announce summary to screen readers.
-			var summaryText = t.summaryAnnounce.replace('%1$s', summary.installed || 0).replace('%2$s', summary.updated || 0).replace('%3$s', summary.failed || 0);
+			let summaryText = t.summaryAnnounce.replace('%1$s', summary.installed || 0).replace('%2$s', summary.updated || 0).replace('%3$s', summary.failed || 0);
 			if (dryRun) {
 				summaryText = t.dryRunCompleteAnnounce + ' ' + summaryText;
 			}
@@ -791,18 +856,23 @@
 		 * @param {FileList} fileList Files from input or drop.
 		 */
 		handleFiles: function (fileList) {
-			var self = this;
-			var t = this.i18n();
-			var validFiles = [];
-			var rejectedNames = [];
+			const self = this;
+			const t = this.i18n();
+			let validFiles = [];
+			const rejectedNames = [];
 
-			for (var i = 0; i < fileList.length; i++) {
-				var file = fileList[i];
-				if (file.name.toLowerCase().endsWith('.zip')) {
-					validFiles.push(file);
-				} else {
+			for (let i = 0; i < fileList.length; i++) {
+				const file = fileList[i];
+				if (!file.name.toLowerCase().endsWith('.zip')) {
 					rejectedNames.push(file.name);
+					continue;
 				}
+				const maxFileSize = bpiAdmin.maxFileSize || 0; // in MB, 0 = no limit
+				if (maxFileSize > 0 && file.size > maxFileSize * 1024 * 1024) {
+					rejectedNames.push(file.name + ' (exceeds ' + maxFileSize + 'MB)');
+					continue;
+				}
+				validFiles.push(file);
 			}
 
 			// Show rejection notices.
@@ -815,8 +885,17 @@
 
 			if (!validFiles.length) return;
 
+			// Queue limit validation.
+			const maxPlugins = bpiAdmin.maxPlugins || 100;
+			const currentCount = self.queue.filter(function (q) { return !q._uploading; }).length;
+			if (currentCount + validFiles.length > maxPlugins) {
+				self.showNotice('Queue limit of ' + maxPlugins + ' plugins would be exceeded.', 'warning');
+				validFiles = validFiles.slice(0, Math.max(0, maxPlugins - currentCount));
+				if (!validFiles.length) return;
+			}
+
 			// Upload each valid file.
-			for (var j = 0; j < validFiles.length; j++) {
+			for (let j = 0; j < validFiles.length; j++) {
 				self.uploadFile(validFiles[j]);
 			}
 		},
@@ -827,11 +906,11 @@
 		 * @param {File} file The file to upload.
 		 */
 		uploadFile: function (file) {
-			var self = this;
+			const self = this;
 
 			// Create a temporary queue item for progress display.
-			var tempId = 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
-			var tempItem = {
+			const tempId = 'temp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+			const tempItem = {
 				_tempId: tempId,
 				file_name: file.name,
 				file_size: file.size,
@@ -842,24 +921,24 @@
 			this.queue.push(tempItem);
 			this.renderQueue();
 
-			var formData = new FormData();
+			const formData = new FormData();
 			formData.append('action', 'bpi_upload');
 			formData.append('_wpnonce', bpiAdmin.uploadNonce || bpiAdmin.nonce);
 			formData.append('plugin_zip', file);
 
-			var xhr = new XMLHttpRequest();
+			const xhr = new XMLHttpRequest();
 
 			// Track upload progress.
 			xhr.upload.addEventListener('progress', function (e) {
 				if (e.lengthComputable) {
-					var pct = Math.round((e.loaded / e.total) * 100);
+					const pct = Math.round((e.loaded / e.total) * 100);
 					self.updateItemProgress(tempId, pct);
 				}
 			});
 
 			xhr.addEventListener('load', function () {
-				var t = self.i18n();
-				var response;
+				const t = self.i18n();
+				let response;
 				try {
 					response = JSON.parse(xhr.responseText);
 				} catch (e) {
@@ -868,7 +947,7 @@
 				}
 
 				if (response.success && response.data) {
-					var data = response.data;
+					const data = response.data;
 					self.replaceTemp(tempId, {
 						slug: data.slug,
 						file_name: data.file_name || file.name,
@@ -880,7 +959,7 @@
 					});
 					self.announce(t.uploaded.replace('%s', data.file_name || file.name));
 				} else {
-					var msg = (response.data && response.data.message) ? response.data.message : t.uploadFailed;
+					const msg = (response.data && response.data.message) ? response.data.message : t.uploadFailed;
 					self.replaceTemp(tempId, null, msg);
 				}
 			});
@@ -900,18 +979,18 @@
 		 * @param {number} pct    Progress percentage (0-100).
 		 */
 		updateItemProgress: function (tempId, pct) {
-			for (var i = 0; i < this.queue.length; i++) {
+			for (let i = 0; i < this.queue.length; i++) {
 				if (this.queue[i]._tempId === tempId) {
 					this.queue[i]._progress = pct;
 					break;
 				}
 			}
-			var $bar = $('#bpi-progress-' + tempId + ' .bpi-progress-bar__fill');
+			const $bar = $('#bpi-progress-' + tempId + ' .bpi-progress-bar__fill');
 			if ($bar.length) {
 				$bar.css('width', pct + '%');
 				$bar.parent().attr('aria-valuenow', pct);
 			}
-			var $status = $('#bpi-status-' + tempId);
+			const $status = $('#bpi-status-' + tempId);
 			if ($status.length) {
 				$status.text(pct + '%');
 			}
@@ -925,12 +1004,12 @@
 		 * @param {string}      [errMsg] Error message on failure.
 		 */
 		replaceTemp: function (tempId, data, errMsg) {
-			for (var i = 0; i < this.queue.length; i++) {
+			for (let i = 0; i < this.queue.length; i++) {
 				if (this.queue[i]._tempId === tempId) {
 					if (data) {
 						// Check for duplicate slug — replace existing.
-						var existingIdx = -1;
-						for (var j = 0; j < this.queue.length; j++) {
+						let existingIdx = -1;
+						for (let j = 0; j < this.queue.length; j++) {
 							if (j !== i && this.queue[j].slug === data.slug) {
 								existingIdx = j;
 								break;
@@ -966,11 +1045,11 @@
 		 * @param {string} slug Plugin slug to remove.
 		 */
 		removeFromQueue: function (slug) {
-			var self = this;
-			var t = this.i18n();
+			const self = this;
+			const t = this.i18n();
 
 			// Remove locally first for responsiveness.
-			for (var i = 0; i < this.queue.length; i++) {
+			for (let i = 0; i < this.queue.length; i++) {
 				if (this.queue[i].slug === slug) {
 					this.queue.splice(i, 1);
 					break;
@@ -991,17 +1070,17 @@
 		 * Render the queue list UI.
 		 */
 		renderQueue: function () {
-			var $section = $('#bpi-queue-section');
-			var $list = $('#bpi-queue-list');
-			var $summary = $('#bpi-queue-summary');
-			var $continueBtn = $('#bpi-continue-preview');
+			const $section = $('#bpi-queue-section');
+			const $list = $('#bpi-queue-list');
+			const $summary = $('#bpi-queue-summary');
+			const $continueBtn = $('#bpi-continue-preview');
 
 			// Filter to completed (non-uploading or uploading) items.
-			var completedItems = [];
-			var totalSize = 0;
+			const completedItems = [];
+			let totalSize = 0;
 
-			for (var i = 0; i < this.queue.length; i++) {
-				var item = this.queue[i];
+			for (let i = 0; i < this.queue.length; i++) {
+				const item = this.queue[i];
 				if (!item._uploading || item._tempId) {
 					completedItems.push(item);
 				}
@@ -1019,16 +1098,16 @@
 			$section.show();
 
 			// Count only fully uploaded items.
-			var readyCount = 0;
-			for (var k = 0; k < this.queue.length; k++) {
+			let readyCount = 0;
+			for (let k = 0; k < this.queue.length; k++) {
 				if (!this.queue[k]._uploading) readyCount++;
 			}
 
 			$summary.text(this.i18n().queueSummary.replace('%1$s', readyCount).replace('%2$s', formatFileSize(totalSize)));
 
 			// Build list HTML.
-			var html = '';
-			for (var m = 0; m < this.queue.length; m++) {
+			let html = '';
+			for (let m = 0; m < this.queue.length; m++) {
 				html += this.renderQueueItem(this.queue[m]);
 			}
 			$list.html(html);
@@ -1048,9 +1127,9 @@
 		 * @return {string} HTML string.
 		 */
 		renderQueueItem: function (item) {
-			var t = this.i18n();
-			var itemLabel = this.escAttr(item.file_name || item.slug || 'file');
-			var html = '<li class="bpi-queue-item" aria-label="' + itemLabel + '">';
+			const t = this.i18n();
+			const itemLabel = this.escAttr(item.file_name || item.slug || 'file');
+			let html = '<li class="bpi-queue-item" aria-label="' + itemLabel + '">';
 			html += '<div class="bpi-queue-item__info">';
 			html += '<div class="bpi-queue-item__name">' + this.esc(item.file_name || item.slug || '') + '</div>';
 			html += '<div class="bpi-queue-item__size">' + formatFileSize(item.file_size || 0) + '</div>';
@@ -1087,16 +1166,21 @@
 		 * @param {string} type    Notice type: 'error', 'warning', 'info'.
 		 */
 		showNotice: function (message, type) {
-			var $notices = $('#bpi-notices');
-			var $notice = $('<div class="bpi-notice bpi-notice--' + type + '" role="alert">' + this.esc(message) + '</div>');
+			const $notices = $('#bpi-notices');
+			const $notice = $('<div class="bpi-notice bpi-notice--' + type + '" role="alert">' + this.esc(message) + '</div>');
 			$notices.append($notice);
 
-			// Auto-dismiss after 8 seconds.
-			setTimeout(function () {
-				$notice.fadeOut(300, function () {
-					$(this).remove();
-				});
-			}, 8000);
+			if (type === 'error') {
+				const $dismiss = $('<button type="button" class="bpi-notice-dismiss" aria-label="Dismiss">&times;</button>');
+				$notice.append($dismiss);
+				$dismiss.on('click', function () { $notice.fadeOut(300, function () { $(this).remove(); }); });
+			} else {
+				setTimeout(function () {
+					$notice.fadeOut(300, function () {
+						$(this).remove();
+					});
+				}, 8000);
+			}
 		},
 
 		/**
@@ -1126,9 +1210,9 @@
 		 * @return {string} Escaped string.
 		 */
 		esc: function (str) {
-			var div = document.createElement('div');
-			div.appendChild(document.createTextNode(str));
-			return div.innerHTML;
+			if (!this._escDiv) this._escDiv = document.createElement('div');
+			this._escDiv.textContent = str;
+			return this._escDiv.innerHTML;
 		},
 
 		/**

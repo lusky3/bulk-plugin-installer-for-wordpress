@@ -20,6 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * data and compares them against the running PHP and WordPress versions.
  * Also detects slug conflicts where two queued plugins target the same
  * directory.
+ *
+ * @since 1.0.0
  */
 class BPICompatibilityChecker {
 
@@ -31,6 +33,8 @@ class BPICompatibilityChecker {
      *
      * @param array $plugin_data Plugin metadata with `requires_php` and `requires_wp` keys.
      * @return array Array of issue arrays, each with 'type', 'required', 'current', and 'message'.
+     *
+     * @since 1.0.0
      */
     public function checkPlugin( array $plugin_data ): array {
         $issues = array();
@@ -77,6 +81,8 @@ class BPICompatibilityChecker {
      *
      * @param array $queue Array of queue items (plugin data arrays).
      * @return array The queue with `compatibility_issues` populated on each item.
+     *
+     * @since 1.0.0
      */
     public function checkAll( array $queue ): array {
         $slug_conflicts = $this->checkSlugConflicts( $queue );
@@ -102,6 +108,8 @@ class BPICompatibilityChecker {
      *
      * @param string $required Minimum required PHP version string.
      * @return bool True if the current PHP version is >= the required version.
+     *
+     * @since 1.0.0
      */
     public function checkPhpVersion( string $required ): bool {
         return version_compare( PHP_VERSION, $required, '>=' );
@@ -112,6 +120,8 @@ class BPICompatibilityChecker {
      *
      * @param string $required Minimum required WordPress version string.
      * @return bool True if the current WordPress version is >= the required version.
+     *
+     * @since 1.0.0
      */
     public function checkWpVersion( string $required ): bool {
         return version_compare( $this->getWpVersion(), $required, '>=' );
@@ -125,6 +135,8 @@ class BPICompatibilityChecker {
      *
      * @param array $queue Array of queue items.
      * @return array Associative array keyed by slug, each value is an array of issue arrays.
+     *
+     * @since 1.0.0
      */
     public function checkSlugConflicts( array $queue ): array {
         $slug_counts = array();

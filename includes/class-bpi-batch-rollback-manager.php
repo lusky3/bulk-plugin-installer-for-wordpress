@@ -20,6 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Records batch manifests after processing, supports rolling back
  * entire batches (restoring updated plugins and removing new installs),
  * tracks active batches, and cleans up expired ones.
+ *
+ * @since 1.0.0
  */
 class BPIBatchRollbackManager {
 
@@ -90,6 +92,8 @@ class BPIBatchRollbackManager {
     /**
      * Set the notification manager for post-rollback notifications.
      *
+     * @since 1.0.0
+     *
      * @param BPINotificationManager $notificationManager Notification manager instance.
      */
     public function setNotificationManager( BPINotificationManager $notificationManager ): void {
@@ -102,6 +106,8 @@ class BPIBatchRollbackManager {
      * Stores the manifest in a transient with expiration based on
      * the `bpi_rollback_retention` setting, and tracks the batch ID
      * in the active batches list.
+     *
+     * @since 1.0.0
      *
      * @param string $batch_id Unique batch identifier.
      * @param array  $manifest Batch manifest data.
@@ -132,7 +138,7 @@ class BPIBatchRollbackManager {
         if ( ! in_array( $batch_id, $active, true ) ) {
             $active[] = $batch_id;
         }
-        update_option( self::ACTIVE_BATCHES_KEY, $active );
+        update_option( self::ACTIVE_BATCHES_KEY, $active, false );
     }
 
     /**
@@ -141,6 +147,8 @@ class BPIBatchRollbackManager {
      * Iterates plugins in the manifest: restores updated plugins from
      * backup and removes newly installed plugins. Continues on individual
      * failures and collects results.
+     *
+     * @since 1.0.0
      *
      * @param string $batch_id Batch identifier to rollback.
      * @return array Rollback results with 'success', 'failures', and 'results' keys.
@@ -160,9 +168,13 @@ class BPIBatchRollbackManager {
         $results  = array();
         $failures = array();
 
+        do_action( 'bpi_before_batch_rollback', $batch_id, $manifest );
+
         foreach ( $plugins as $plugin ) {
             $this->rollbackSinglePlugin( $plugin, $results, $failures );
         }
+
+        do_action( 'bpi_after_batch_rollback', $batch_id, $results, $failures );
 
         // Log the batch rollback operation.
         $this->logger->log(
@@ -293,6 +305,8 @@ class BPIBatchRollbackManager {
     /**
      * Get all active batches within the retention period.
      *
+     * @since 1.0.0
+     *
      * @return array Array of batch manifests that are still valid.
      */
     public function getActiveBatches(): array {
@@ -314,6 +328,8 @@ class BPIBatchRollbackManager {
      *
      * Checks active batch IDs and removes any whose transient has expired.
      * Also cleans up backup directories for expired batches.
+     *
+     * @since 1.0.0
      */
     public function cleanupExpired(): void {
         $batch_ids     = $this->getActiveBatchIds();
@@ -343,11 +359,13 @@ class BPIBatchRollbackManager {
             $still_active[] = $batch_id;
         }
 
-        update_option( self::ACTIVE_BATCHES_KEY, $still_active );
+        update_option( self::ACTIVE_BATCHES_KEY, $still_active, false );
     }
 
     /**
      * Get the manifest for a specific batch.
+     *
+     * @since 1.0.0
      *
      * @param string $batch_id Batch identifier.
      * @return array Batch manifest or empty array if not found.
@@ -364,6 +382,8 @@ class BPIBatchRollbackManager {
 
     /**
      * Register the AJAX handler for batch rollback.
+     *
+     * @since 1.0.0
      */
     public function registerAjaxHandler(): void {
         add_action( 'wp_ajax_bpi_batch_rollback', array( $this, 'handleAjaxRollback' ) );
@@ -373,6 +393,10 @@ class BPIBatchRollbackManager {
      * AJAX handler for wp_ajax_bpi_batch_rollback.
      *
      * Verifies nonce and capability, then performs the batch rollback.
+     *
+     * @since 1.0.0
+     *
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function handleAjaxRollback(): void {
         if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'bpi_batch_rollback' ) ) {
@@ -383,7 +407,13 @@ class BPIBatchRollbackManager {
             return;
         }
 
-        if ( ! current_user_can( 'install_plugins' ) ) {
+        $required_cap = 'install_plugins';
+        if ( function_exists( 'is_multisite' ) && is_multisite()
+            && function_exists( 'is_network_admin' ) && is_network_admin() ) {
+            $required_cap = 'manage_network_plugins';
+        }
+
+        if ( ! current_user_can( $required_cap ) ) {
             wp_send_json_error(
                 array( 'message' => __( 'You do not have permission to install plugins.', 'bulk-plugin-installer' ) ),
                 403
@@ -459,7 +489,7 @@ class BPIBatchRollbackManager {
     private function removeBatchId( string $batch_id ): void {
         $active = $this->getActiveBatchIds();
         $active = array_values( array_filter( $active, fn( $id ) => $id !== $batch_id ) );
-        update_option( self::ACTIVE_BATCHES_KEY, $active );
+        update_option( self::ACTIVE_BATCHES_KEY, $active, false );
     }
 
     /**

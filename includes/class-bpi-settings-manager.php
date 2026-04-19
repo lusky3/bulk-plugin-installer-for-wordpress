@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Uses the WordPress Settings API for all option management. Provides
  * a settings page under Settings > Bulk Plugin Installer with configuration
  * options and an activity log display.
+ *
+ * @since 1.0.0
  */
 class BPISettingsManager {
 
@@ -64,6 +66,8 @@ class BPISettingsManager {
      *
      * Registers the option group, settings section, and individual fields
      * for all plugin configuration options.
+     *
+     * @since 1.0.0
      */
     public function registerSettings(): void {
         register_setting(
@@ -190,6 +194,8 @@ class BPISettingsManager {
      *
      * @param string $key The option key to retrieve.
      * @return mixed The option value or its default.
+     *
+     * @since 1.0.0
      */
     public function getOption( string $key ): mixed {
         $default = self::DEFAULTS[ $key ] ?? null;
@@ -205,6 +211,8 @@ class BPISettingsManager {
      *
      * @param array $input Raw input from the settings form.
      * @return array Sanitized settings values.
+     *
+     * @since 1.0.0
      */
     public function sanitizeSettings( array $input ): array {
         $sanitized = array();
@@ -328,6 +336,8 @@ class BPISettingsManager {
 
     /**
      * Add the settings page under the WordPress Settings menu.
+     *
+     * @since 1.0.0
      */
     public function addMenuPage(): void {
         add_options_page(
@@ -344,6 +354,8 @@ class BPISettingsManager {
      *
      * Displays the settings form and the last 50 activity log entries
      * with a clear log button.
+     *
+     * @since 1.0.0
      */
     public function renderSettingsPage(): void {
         ?>
@@ -369,6 +381,8 @@ class BPISettingsManager {
 
     /**
      * Render the section description.
+     *
+     * @since 1.0.0
      */
     public function renderSectionDescription(): void {
         echo '<p>' . esc_html__( 'Configure the behavior of the Bulk Plugin Installer.', 'bulk-plugin-installer' ) . '</p>';
@@ -378,6 +392,8 @@ class BPISettingsManager {
      * Render a checkbox settings field.
      *
      * @param array $args Field arguments including 'key' and 'description'.
+     *
+     * @since 1.0.0
      */
     public function renderCheckboxField( array $args ): void {
         $key     = $args['key'];
@@ -386,11 +402,13 @@ class BPISettingsManager {
         ?>
         <label>
             <input type="checkbox"
+                id="<?php echo esc_attr( $key ); ?>"
                 name="bpi_settings[<?php echo esc_attr( $key ); ?>]"
                 value="1"
+                aria-describedby="<?php echo esc_attr( $key ); ?>-description"
                 <?php checked( $checked ); ?>
             />
-            <?php echo esc_html( $args['description'] ?? '' ); ?>
+            <span id="<?php echo esc_attr( $key ); ?>-description"><?php echo esc_html( $args['description'] ?? '' ); ?></span>
         </label>
         <?php
     }
@@ -399,6 +417,8 @@ class BPISettingsManager {
      * Render a number input settings field.
      *
      * @param array $args Field arguments including 'key', 'description', 'min', 'max'.
+     *
+     * @since 1.0.0
      */
     public function renderNumberField( array $args ): void {
         $key   = $args['key'];
@@ -407,13 +427,15 @@ class BPISettingsManager {
         $max   = $args['max'] ?? 99999;
         ?>
         <input type="number"
+            id="<?php echo esc_attr( $key ); ?>"
             name="bpi_settings[<?php echo esc_attr( $key ); ?>]"
             value="<?php echo esc_attr( (string) $value ); ?>"
             min="<?php echo esc_attr( (string) $min ); ?>"
             max="<?php echo esc_attr( (string) $max ); ?>"
+            aria-describedby="<?php echo esc_attr( $key ); ?>-description"
             class="small-text"
         />
-        <p class="description"><?php echo esc_html( $args['description'] ?? '' ); ?></p>
+        <p id="<?php echo esc_attr( $key ); ?>-description" class="description"><?php echo esc_html( $args['description'] ?? '' ); ?></p>
         <?php
     }
 
@@ -421,6 +443,8 @@ class BPISettingsManager {
      * Render a text input settings field.
      *
      * @param array $args Field arguments including 'key', 'description', 'placeholder'.
+     *
+     * @since 1.0.0
      */
     public function renderTextField( array $args ): void {
         $key         = $args['key'];
@@ -428,12 +452,14 @@ class BPISettingsManager {
         $placeholder = $args['placeholder'] ?? '';
         ?>
         <input type="text"
+            id="<?php echo esc_attr( $key ); ?>"
             name="bpi_settings[<?php echo esc_attr( $key ); ?>]"
             value="<?php echo esc_attr( (string) $value ); ?>"
             placeholder="<?php echo esc_attr( $placeholder ); ?>"
+            aria-describedby="<?php echo esc_attr( $key ); ?>-description"
             class="regular-text"
         />
-        <p class="description"><?php echo esc_html( $args['description'] ?? '' ); ?></p>
+        <p id="<?php echo esc_attr( $key ); ?>-description" class="description"><?php echo esc_html( $args['description'] ?? '' ); ?></p>
         <?php
     }
 
@@ -450,7 +476,7 @@ class BPISettingsManager {
         }
 
         ?>
-        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to clear the activity log? This cannot be undone.', 'bulk-plugin-installer' ) ); ?>');">
             <?php wp_nonce_field( 'bpi_clear_log', 'bpi_clear_log_nonce' ); ?>
             <input type="hidden" name="action" value="bpi_clear_log" />
             <p>
@@ -496,6 +522,8 @@ class BPISettingsManager {
      * Get the page slug constant for external use.
      *
      * @return string The settings page slug.
+     *
+     * @since 1.0.0
      */
     public function getPageSlug(): string {
         return self::PAGE_SLUG;
@@ -505,6 +533,8 @@ class BPISettingsManager {
      * Get the option group constant for external use.
      *
      * @return string The option group name.
+     *
+     * @since 1.0.0
      */
     public function getOptionGroup(): string {
         return self::OPTION_GROUP;
@@ -514,6 +544,8 @@ class BPISettingsManager {
      * Get the default values for all settings.
      *
      * @return array<string, mixed> Default settings.
+     *
+     * @since 1.0.0
      */
     public function getDefaults(): array {
         return self::DEFAULTS;

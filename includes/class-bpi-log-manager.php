@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Stores log entries in a dedicated database table ({prefix}_bpi_log)
  * for efficient querying and pagination. Each entry records the action
  * type, plugin details, outcome, and whether it was a dry run.
+ *
+ * @since 1.0.0
  */
 class BPILogManager {
 
@@ -41,6 +43,8 @@ class BPILogManager {
      * Create the log table on plugin activation.
      *
      * Uses dbDelta() for safe table creation and schema updates.
+     *
+     * @since 1.0.0
      */
     public function createTable(): void {
         global $wpdb;
@@ -76,6 +80,8 @@ class BPILogManager {
 
     /**
      * Drop the log table on plugin uninstall.
+     *
+     * @since 1.0.0
      */
     public function dropTable(): void {
         global $wpdb;
@@ -86,6 +92,8 @@ class BPILogManager {
 
     /**
      * Write a log entry.
+     *
+     * @since 1.0.0
      *
      * @param string $action  The action type (install, update, rollback, batch_rollback, dry_run).
      * @param array  $details {
@@ -118,7 +126,7 @@ class BPILogManager {
                 'from_version' => sanitize_text_field( $details['from_version'] ?? '' ),
                 'to_version'   => sanitize_text_field( $details['to_version'] ?? '' ),
                 'status'       => sanitize_text_field( $details['status'] ?? '' ),
-                'message'      => sanitize_text_field( $details['message'] ?? '' ),
+                'message'      => sanitize_textarea_field( $details['message'] ?? '' ),
                 'is_dry_run'   => ! empty( $details['is_dry_run'] ) ? 1 : 0,
             ),
             array( '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d' )
@@ -127,6 +135,8 @@ class BPILogManager {
 
     /**
      * Get log entries with pagination.
+     *
+     * @since 1.0.0
      *
      * @param int $limit  Maximum number of entries to return. Default 50.
      * @param int $offset Number of entries to skip. Default 0.
@@ -152,6 +162,8 @@ class BPILogManager {
 
     /**
      * Clear all log entries.
+     *
+     * @since 1.0.0
      */
     public function clear(): void {
         global $wpdb;
@@ -164,6 +176,8 @@ class BPILogManager {
      * AJAX handler for wp_ajax_bpi_get_log.
      *
      * Returns log entries as JSON. Verifies nonce and capability.
+     *
+     * @since 1.0.0
      */
     public function handleGetLog(): void {
         if ( ! isset( $_GET['_wpnonce'] ) && ! isset( $_POST['_wpnonce'] ) ) {
@@ -203,6 +217,8 @@ class BPILogManager {
      * AJAX handler for wp_ajax_bpi_clear_log.
      *
      * Clears all log entries. Verifies nonce and capability.
+     *
+     * @since 1.0.0
      */
     public function handleClearLog(): void {
         if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'bpi_clear_log' ) ) {

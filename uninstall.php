@@ -43,15 +43,15 @@ $table_name = $wpdb->prefix . 'bpi_log';
 $wpdb->query( "DROP TABLE IF EXISTS {$table_name}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 // Delete all BPI transients.
-$wpdb->query(
-    "DELETE FROM {$wpdb->options}
-     WHERE option_name LIKE '_transient_bpi_queue_%'
-        OR option_name LIKE '_transient_timeout_bpi_queue_%'
-        OR option_name LIKE '_transient_bpi_batch_%'
-        OR option_name LIKE '_transient_timeout_bpi_batch_%'
-        OR option_name LIKE '_transient_bpi_admin_notice_%'
-        OR option_name LIKE '_transient_timeout_bpi_admin_notice_%'"
-);
+$wpdb->query( $wpdb->prepare(
+    "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
+    $wpdb->esc_like( '_transient_bpi_queue_' ) . '%',
+    $wpdb->esc_like( '_transient_timeout_bpi_queue_' ) . '%',
+    $wpdb->esc_like( '_transient_bpi_batch_' ) . '%',
+    $wpdb->esc_like( '_transient_timeout_bpi_batch_' ) . '%',
+    $wpdb->esc_like( '_transient_bpi_admin_notice' ) . '%',
+    $wpdb->esc_like( '_transient_timeout_bpi_admin_notice' ) . '%'
+) );
 
 // Remove backup files.
 $backup_dir = WP_CONTENT_DIR . '/bpi-backups';
@@ -60,6 +60,7 @@ if ( is_dir( $backup_dir ) ) {
         new RecursiveDirectoryIterator( $backup_dir, RecursiveDirectoryIterator::SKIP_DOTS ),
         RecursiveIteratorIterator::CHILD_FIRST
     );
+    $items->setMaxDepth( 50 );
 
     foreach ( $items as $item ) {
         if ( $item->isDir() ) {
@@ -70,4 +71,25 @@ if ( is_dir( $backup_dir ) ) {
     }
 
     rmdir( $backup_dir );
+}
+
+// Remove temporary upload files.
+$upload_dir = wp_upload_dir();
+$tmp_dir    = trailingslashit( $upload_dir['basedir'] ) . 'bpi-tmp';
+if ( is_dir( $tmp_dir ) ) {
+    $items = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator( $tmp_dir, RecursiveDirectoryIterator::SKIP_DOTS ),
+        RecursiveIteratorIterator::CHILD_FIRST
+    );
+    $items->setMaxDepth( 50 );
+
+    foreach ( $items as $item ) {
+        if ( $item->isDir() ) {
+            rmdir( $item->getRealPath() );
+        } else {
+            unlink( $item->getRealPath() );
+        }
+    }
+
+    rmdir( $tmp_dir );
 }

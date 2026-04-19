@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Each user gets their own queue stored as a transient keyed by
  * `bpi_queue_{user_id}`. The queue holds validated plugin data
  * ready for preview and processing.
+ *
+ * @since 1.0.0
  */
 class BPIQueueManager {
 
@@ -44,15 +46,27 @@ class BPIQueueManager {
      * If a plugin with the same slug already exists in the queue,
      * the existing entry is replaced with the new one (deduplication).
      *
+     * @since 1.0.0
+     *
      * @param string $file_path   Path to the uploaded ZIP file.
      * @param array  $plugin_data Plugin metadata extracted from the ZIP.
      * @return bool True on success, false on failure.
      */
     public function add( string $file_path, array $plugin_data ): bool {
+        $lock_key = $this->getTransientKey() . '_lock';
+        $max_wait = 5;
+        $waited = 0;
+        while ( get_transient( $lock_key ) && $waited < $max_wait ) {
+            usleep( 200000 ); // 200ms
+            $waited++;
+        }
+        set_transient( $lock_key, 1, 10 );
+
         $queue = $this->getAll();
         $slug  = $plugin_data['slug'] ?? '';
 
         if ( '' === $slug ) {
+            delete_transient( $lock_key );
             return false;
         }
 
@@ -83,16 +97,30 @@ class BPIQueueManager {
         $queue   = array_values( $queue );
         $queue[] = $item;
 
-        return set_transient( $this->getTransientKey(), $queue, self::TRANSIENT_EXPIRATION );
+        $result = set_transient( $this->getTransientKey(), $queue, self::TRANSIENT_EXPIRATION );
+        delete_transient( $lock_key );
+
+        return $result;
     }
 
     /**
      * Remove a plugin from the queue by slug.
      *
+     * @since 1.0.0
+     *
      * @param string $slug Plugin slug to remove.
      * @return bool True if the item was found and removed, false otherwise.
      */
     public function remove( string $slug ): bool {
+        $lock_key = $this->getTransientKey() . '_lock';
+        $max_wait = 5;
+        $waited = 0;
+        while ( get_transient( $lock_key ) && $waited < $max_wait ) {
+            usleep( 200000 ); // 200ms
+            $waited++;
+        }
+        set_transient( $lock_key, 1, 10 );
+
         $queue    = $this->getAll();
         $original = count( $queue );
 
@@ -103,6 +131,7 @@ class BPIQueueManager {
         $queue = array_values( $queue );
 
         if ( count( $queue ) === $original ) {
+            delete_transient( $lock_key );
             return false;
         }
 
@@ -112,11 +141,14 @@ class BPIQueueManager {
             set_transient( $this->getTransientKey(), $queue, self::TRANSIENT_EXPIRATION );
         }
 
+        delete_transient( $lock_key );
         return true;
     }
 
     /**
      * Get all queued items for the current user.
+     *
+     * @since 1.0.0
      *
      * @return array Array of queue items.
      */
@@ -127,6 +159,8 @@ class BPIQueueManager {
 
     /**
      * Clear the entire queue for the current user.
+     *
+     * @since 1.0.0
      */
     public function clear(): void {
         delete_transient( $this->getTransientKey() );
@@ -134,6 +168,8 @@ class BPIQueueManager {
 
     /**
      * Get the number of items in the queue.
+     *
+     * @since 1.0.0
      *
      * @return int Number of queued items.
      */
@@ -143,6 +179,8 @@ class BPIQueueManager {
 
     /**
      * Get the combined file size of all queued items in bytes.
+     *
+     * @since 1.0.0
      *
      * @return int Total file size in bytes.
      */
@@ -156,6 +194,8 @@ class BPIQueueManager {
 
     /**
      * Check if a plugin slug already exists in the queue.
+     *
+     * @since 1.0.0
      *
      * @param string $slug Plugin slug to check.
      * @return bool True if the slug is already queued.
@@ -184,7 +224,13 @@ class BPIQueueManager {
             return false;
         }
 
-        if ( ! current_user_can( 'install_plugins' ) ) {
+        $required_cap = 'install_plugins';
+        if ( function_exists( 'is_multisite' ) && is_multisite()
+            && function_exists( 'is_network_admin' ) && is_network_admin() ) {
+            $required_cap = 'manage_network_plugins';
+        }
+
+        if ( ! current_user_can( $required_cap ) ) {
             wp_send_json_error(
                 array( 'message' => __( 'You do not have permission to install plugins.', 'bulk-plugin-installer' ) ),
                 403
@@ -200,6 +246,8 @@ class BPIQueueManager {
      *
      * Verifies nonce and capability before removing the specified slug.
      * Registered on `wp_ajax_bpi_queue_remove`.
+     *
+     * @since 1.0.0
      */
     public function handleQueueRemove(): void {
         if ( ! $this->verifyAjaxRequest( 'bpi_queue_remove' ) ) {

@@ -20,6 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Iterates selected plugins sequentially, calling Plugin_Upgrader
  * for each. Supports backup/rollback for updates, partial install
  * cleanup for failed new installs, and per-plugin activation control.
+ *
+ * @since 1.0.0
  */
 class BPIPluginProcessor {
 
@@ -78,6 +80,8 @@ class BPIPluginProcessor {
      * @param BPIRollbackManager $rollback Rollback manager.
      * @param BPILogManager      $logger   Log manager.
      * @param BPISettingsManager $settings Settings manager.
+     *
+     * @since 1.0.0
      */
     public function __construct(
         BPIRollbackManager $rollback,
@@ -93,6 +97,8 @@ class BPIPluginProcessor {
      * Set the notification manager for post-batch notifications.
      *
      * @param BPINotificationManager $notificationManager Notification manager instance.
+     *
+     * @since 1.0.0
      */
     public function setNotificationManager( BPINotificationManager $notificationManager ): void {
         $this->notificationManager = $notificationManager;
@@ -102,6 +108,8 @@ class BPIPluginProcessor {
      * Set the batch rollback manager for recording batch manifests.
      *
      * @param BPIBatchRollbackManager $batchRollbackManager Batch rollback manager instance.
+     *
+     * @since 1.0.0
      */
     public function setBatchRollbackManager( BPIBatchRollbackManager $batchRollbackManager ): void {
         $this->batchRollbackManager = $batchRollbackManager;
@@ -116,15 +124,21 @@ class BPIPluginProcessor {
      * @param array $selected_plugins Array of plugin data arrays.
      * @param bool  $dry_run          Whether to simulate without making changes.
      * @return array Array of per-plugin result arrays.
+     *
+     * @since 1.0.0
      */
     public function processBatch( array $selected_plugins, bool $dry_run = false ): array {
         $this->results  = array();
-        $this->batchId = 'bpi_' . time() . '_' . get_current_user_id();
+        $this->batchId = 'bpi_' . wp_generate_uuid4();
+
+        do_action( 'bpi_before_process_batch', $selected_plugins, $dry_run );
 
         foreach ( $selected_plugins as $plugin_data ) {
             $result          = $this->processPlugin( $plugin_data, $dry_run );
             $this->results[] = $result;
         }
+
+        do_action( 'bpi_after_process_batch', $this->results, $dry_run );
 
         return $this->results;
     }
@@ -138,6 +152,8 @@ class BPIPluginProcessor {
      * @param array $plugin_data Plugin data with slug, action, file_path, etc.
      * @param bool  $dry_run     Whether to simulate without making changes.
      * @return array Result array with status, messages, etc.
+     *
+     * @since 1.0.0
      */
     public function processPlugin( array $plugin_data, bool $dry_run = false ): array {
         $slug        = $plugin_data['slug'] ?? '';
@@ -145,6 +161,19 @@ class BPIPluginProcessor {
         $plugin_name = $plugin_data['plugin_name'] ?? $slug;
         $new_version = $plugin_data['plugin_version'] ?? '';
         $old_version = $plugin_data['installed_version'] ?? '';
+
+        // Early validation: slug is required.
+        if ( '' === $slug ) {
+            return array(
+                'slug'        => '',
+                'plugin_name' => $plugin_name,
+                'action'      => $action,
+                'status'      => 'failed',
+                'messages'    => array( __( 'Plugin slug is missing.', 'bulk-plugin-installer' ) ),
+                'activated'   => false,
+                'rolled_back' => false,
+            );
+        }
 
         $log_ctx = array(
             'action' => $action, 'slug' => $slug, 'plugin_name' => $plugin_name,
@@ -162,10 +191,14 @@ class BPIPluginProcessor {
         );
 
         if ( $dry_run ) {
-            return $this->simulateDryRun( $plugin_data, $result, $log_ctx );
+            $result = $this->simulateDryRun( $plugin_data, $result, $log_ctx );
+        } else {
+            $result = $this->executePluginOperation( $plugin_data, $result, $log_ctx );
         }
 
-        return $this->executePluginOperation( $plugin_data, $result, $log_ctx );
+        $result = apply_filters( 'bpi_process_plugin_result', $result, $plugin_data, $dry_run );
+
+        return $result;
     }
 
 
@@ -173,6 +206,8 @@ class BPIPluginProcessor {
      * Get the batch summary with counts.
      *
      * @return array Summary with total, installed, updated, failed, rolled_back counts.
+     *
+     * @since 1.0.0
      */
     public function getBatchSummary(): array {
         $summary = array(
@@ -206,6 +241,8 @@ class BPIPluginProcessor {
 
     /**
      * Register the AJAX handlers for processing and dry run.
+     *
+     * @since 1.0.0
      */
     public function registerAjaxHandler(): void {
         add_action( 'wp_ajax_bpi_process', array( $this, 'handleAjaxProcess' ) );
@@ -217,6 +254,8 @@ class BPIPluginProcessor {
      *
      * Verifies nonce and capability, then processes the batch.
      * In Network Admin context, checks `manage_network_plugins`.
+     *
+     * @since 1.0.0
      */
     public function handleAjaxProcess(): void {
         if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'bpi_process' ) ) {
@@ -245,6 +284,9 @@ class BPIPluginProcessor {
             );
             return;
         }
+
+        // Sanitize and validate each plugin entry.
+        $selected = $this->sanitizeSelectedPlugins( $selected );
 
         $results = $this->processBatch( $selected, $dry_run );
         $summary = $this->getBatchSummary();
@@ -296,9 +338,11 @@ class BPIPluginProcessor {
      * then processes the batch in dry run mode. The queue remains
      * intact so the user can proceed to actual installation.
      * In Network Admin context, checks `manage_network_plugins`.
+     *
+     * @since 1.0.0
      */
     public function handleAjaxDryRun(): void {
-        if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'bpi_dry_run' ) ) {
+        if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['_wpnonce'] ), 'bpi_process' ) ) {
             wp_send_json_error(
                 array( 'message' => __( 'Security verification failed. Please refresh the page and try again.', 'bulk-plugin-installer' ) ),
                 403
@@ -323,6 +367,9 @@ class BPIPluginProcessor {
             );
             return;
         }
+
+        // Sanitize and validate each plugin entry.
+        $selected = $this->sanitizeSelectedPlugins( $selected );
 
         $results = $this->processBatch( $selected, true );
         $summary = $this->getBatchSummary();
@@ -650,6 +697,43 @@ class BPIPluginProcessor {
                 'is_dry_run'   => $context['is_dry_run'] ?? false,
             )
         );
+    }
+
+    /**
+     * Sanitize and validate an array of selected plugin data from user input.
+     *
+     * @param array $selected Raw plugin data from $_POST.
+     * @return array Sanitized plugin data.
+     */
+    private function sanitizeSelectedPlugins( array $selected ): array {
+        $upload_dir = wp_upload_dir();
+        $bpi_tmp    = trailingslashit( $upload_dir['basedir'] ) . 'bpi-tmp/';
+
+        return array_map( function ( $p ) use ( $bpi_tmp ) {
+            $sanitized = array(
+                'slug'              => sanitize_text_field( $p['slug'] ?? '' ),
+                'plugin_name'       => sanitize_text_field( $p['plugin_name'] ?? '' ),
+                'plugin_version'    => sanitize_text_field( $p['plugin_version'] ?? '' ),
+                'action'            => in_array( $p['action'] ?? '', array( 'install', 'update' ), true ) ? $p['action'] : 'install',
+                'installed_version' => sanitize_text_field( $p['installed_version'] ?? '' ),
+                'plugin_file'       => sanitize_text_field( $p['plugin_file'] ?? '' ),
+                'activate'          => ! empty( $p['activate'] ),
+                'network_activate'  => ! empty( $p['network_activate'] ),
+            );
+            $file_path = $p['file_path'] ?? '';
+            if ( '' !== $file_path ) {
+                $real_path = realpath( $file_path );
+                $real_tmp  = realpath( $bpi_tmp );
+                if ( false !== $real_path && false !== $real_tmp && str_starts_with( $real_path, $real_tmp ) ) {
+                    $sanitized['file_path'] = $real_path;
+                } else {
+                    $sanitized['file_path'] = '';
+                }
+            } else {
+                $sanitized['file_path'] = '';
+            }
+            return $sanitized;
+        }, $selected );
     }
 
     /**

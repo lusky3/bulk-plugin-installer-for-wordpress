@@ -78,6 +78,61 @@ class BulkPluginInstaller {
     private static ?BulkPluginInstaller $instance = null;
 
     /**
+     * @var BPISettingsManager|null
+     */
+    private ?BPISettingsManager $settings_manager = null;
+
+    /**
+     * @var BPILogManager|null
+     */
+    private ?BPILogManager $log_manager = null;
+
+    /**
+     * @var BPIRollbackManager|null
+     */
+    private ?BPIRollbackManager $rollback_manager = null;
+
+    /**
+     * @var BPINotificationManager|null
+     */
+    private ?BPINotificationManager $notification_manager = null;
+
+    /**
+     * @var BPIAdminPage|null
+     */
+    private ?BPIAdminPage $admin_page = null;
+
+    /**
+     * @var BPIPluginProcessor|null
+     */
+    private ?BPIPluginProcessor $plugin_processor = null;
+
+    /**
+     * @var BPIBatchRollbackManager|null
+     */
+    private ?BPIBatchRollbackManager $batch_rollback_manager = null;
+
+    /**
+     * @var BPIBulkUploader|null
+     */
+    private ?BPIBulkUploader $bulk_uploader = null;
+
+    /**
+     * @var BPIQueueManager|null
+     */
+    private ?BPIQueueManager $queue_manager = null;
+
+    /**
+     * @var BPIProfileManager|null
+     */
+    private ?BPIProfileManager $profile_manager = null;
+
+    /**
+     * @var BPIGithubUpdater|null
+     */
+    private ?BPIGithubUpdater $github_updater = null;
+
+    /**
      * Get the singleton instance.
      *
      * @return BulkPluginInstaller
@@ -105,54 +160,100 @@ class BulkPluginInstaller {
     public function init(): void {
         add_action( 'init', array( $this, 'loadTextdomain' ) );
 
-        // Instantiate shared dependencies.
-        $settings_manager = new BPISettingsManager();
-        $log_manager      = new BPILogManager();
-        $rollback_manager = new BPIRollbackManager();
+        // Eagerly instantiate shared dependencies needed for admin_init / menu hooks.
+        $this->settings_manager = new BPISettingsManager();
+        $this->log_manager      = new BPILogManager();
+        $this->rollback_manager = new BPIRollbackManager();
 
-        // Notification manager.
-        $notification_manager = new BPINotificationManager( $settings_manager );
-        $notification_manager->registerHooks();
+        // Notification manager (eager — registers admin_notices).
+        $this->notification_manager = new BPINotificationManager( $this->settings_manager );
+        $this->notification_manager->registerHooks();
 
-        // Admin page: registers admin_menu, plugin_install_action_links, and wp_ajax_bpi_preview.
-        $admin_page = new BPIAdminPage();
-        $admin_page->registerHooks();
+        // Admin page: registers admin_menu, plugin_install_action_links, and wp_ajax_bpi_preview (eager).
+        $this->admin_page = new BPIAdminPage();
+        $this->admin_page->registerHooks();
 
         // Settings manager: registers settings page (must run on admin_init).
-        add_action( 'admin_init', array( $settings_manager, 'registerSettings' ) );
+        add_action( 'admin_init', array( $this->settings_manager, 'registerSettings' ) );
+        add_action( 'admin_menu', array( $this->settings_manager, 'addMenuPage' ) );
 
-        // Bulk uploader: wp_ajax_bpi_upload.
-        $bulk_uploader = new BPIBulkUploader();
-        add_action( 'wp_ajax_bpi_upload', array( $bulk_uploader, 'handleUpload' ) );
+        // Bulk uploader: wp_ajax_bpi_upload (deferred).
+        add_action( 'wp_ajax_bpi_upload', function () {
+            if ( null === $this->bulk_uploader ) {
+                $this->bulk_uploader = new BPIBulkUploader();
+            }
+            $this->bulk_uploader->handleUpload();
+        } );
 
-        // Queue manager: wp_ajax_bpi_queue_remove.
-        $queue_manager = new BPIQueueManager();
-        add_action( 'wp_ajax_bpi_queue_remove', array( $queue_manager, 'handleQueueRemove' ) );
+        // Queue manager: wp_ajax_bpi_queue_remove (deferred).
+        add_action( 'wp_ajax_bpi_queue_remove', function () {
+            if ( null === $this->queue_manager ) {
+                $this->queue_manager = new BPIQueueManager();
+            }
+            $this->queue_manager->handleQueueRemove();
+        } );
 
-        // Plugin processor: wp_ajax_bpi_process, wp_ajax_bpi_dry_run.
-        $plugin_processor = new BPIPluginProcessor( $rollback_manager, $log_manager, $settings_manager );
-        $plugin_processor->registerAjaxHandler();
+        // Plugin processor: wp_ajax_bpi_process, wp_ajax_bpi_dry_run (deferred).
+        $lazy_processor = function () {
+            if ( null === $this->plugin_processor ) {
+                $this->plugin_processor = new BPIPluginProcessor( $this->rollback_manager, $this->log_manager, $this->settings_manager );
+                $this->plugin_processor->setNotificationManager( $this->notification_manager );
+                if ( null === $this->batch_rollback_manager ) {
+                    $this->batch_rollback_manager = new BPIBatchRollbackManager( $this->rollback_manager, $this->settings_manager, $this->log_manager );
+                    $this->batch_rollback_manager->setNotificationManager( $this->notification_manager );
+                }
+                $this->plugin_processor->setBatchRollbackManager( $this->batch_rollback_manager );
+            }
+            return $this->plugin_processor;
+        };
+        add_action( 'wp_ajax_bpi_process', function () use ( $lazy_processor ) {
+            $lazy_processor()->handleAjaxProcess();
+        } );
+        add_action( 'wp_ajax_bpi_dry_run', function () use ( $lazy_processor ) {
+            $lazy_processor()->handleAjaxDryRun();
+        } );
 
-        // Batch rollback manager: wp_ajax_bpi_batch_rollback.
-        $batch_rollback_manager = new BPIBatchRollbackManager( $rollback_manager, $settings_manager, $log_manager );
-        $batch_rollback_manager->registerAjaxHandler();
+        // Batch rollback manager: wp_ajax_bpi_batch_rollback (deferred).
+        add_action( 'wp_ajax_bpi_batch_rollback', function () {
+            if ( null === $this->batch_rollback_manager ) {
+                $this->batch_rollback_manager = new BPIBatchRollbackManager( $this->rollback_manager, $this->settings_manager, $this->log_manager );
+                $this->batch_rollback_manager->setNotificationManager( $this->notification_manager );
+            }
+            $this->batch_rollback_manager->handleAjaxRollback();
+        } );
 
-        // Wire notification manager into processor and batch rollback.
-        $plugin_processor->setNotificationManager( $notification_manager );
-        $plugin_processor->setBatchRollbackManager( $batch_rollback_manager );
-        $batch_rollback_manager->setNotificationManager( $notification_manager );
-
-        // Profile manager: wp_ajax_bpi_save_profile, wp_ajax_bpi_import_profile, wp_ajax_bpi_export_profile.
-        $profile_manager = new BPIProfileManager();
-        $profile_manager->registerAjaxHandlers();
+        // Profile manager: wp_ajax_bpi_save_profile, wp_ajax_bpi_import_profile, wp_ajax_bpi_export_profile (deferred).
+        $lazy_profile = function () {
+            if ( null === $this->profile_manager ) {
+                $this->profile_manager = new BPIProfileManager();
+            }
+            return $this->profile_manager;
+        };
+        add_action( 'wp_ajax_bpi_save_profile', function () use ( $lazy_profile ) {
+            $lazy_profile()->handleAjaxSaveProfile();
+        } );
+        add_action( 'wp_ajax_bpi_import_profile', function () use ( $lazy_profile ) {
+            $lazy_profile()->handleAjaxImportProfile();
+        } );
+        add_action( 'wp_ajax_bpi_export_profile', function () use ( $lazy_profile ) {
+            $lazy_profile()->handleAjaxExportProfile();
+        } );
 
         // Log manager AJAX: wp_ajax_bpi_get_log, wp_ajax_bpi_clear_log.
-        add_action( 'wp_ajax_bpi_get_log', array( $log_manager, 'handleGetLog' ) );
-        add_action( 'wp_ajax_bpi_clear_log', array( $log_manager, 'handleClearLog' ) );
+        add_action( 'wp_ajax_bpi_get_log', array( $this->log_manager, 'handleGetLog' ) );
+        add_action( 'wp_ajax_bpi_clear_log', array( $this->log_manager, 'handleClearLog' ) );
 
-        // GitHub update checker: notifies of new versions and shows changelog in Plugins UI.
-        $github_updater = new BPIGithubUpdater();
-        $github_updater->registerHooks();
+        // GitHub update checker: notifies of new versions and shows changelog in Plugins UI (eager).
+        $this->github_updater = new BPIGithubUpdater();
+        $this->github_updater->registerHooks();
+
+        // Expired backup cleanup cron.
+        add_action( 'bpi_cleanup_expired_backups', function () {
+            if ( null === $this->batch_rollback_manager ) {
+                $this->batch_rollback_manager = new BPIBatchRollbackManager( $this->rollback_manager, $this->settings_manager, $this->log_manager );
+            }
+            $this->batch_rollback_manager->cleanupExpired();
+        } );
 
         // Register network admin menu hook for multisite support.
         if ( function_exists( 'is_multisite' ) && is_multisite() ) {
@@ -167,9 +268,8 @@ class BulkPluginInstaller {
      * bulk upload menu under Network Admin > Plugins.
      */
     public function registerNetworkAdminHooks(): void {
-        if ( class_exists( 'BPIAdminPage' ) ) {
-            $admin_page = new BPIAdminPage();
-            $admin_page->registerNetworkMenu();
+        if ( null !== $this->admin_page ) {
+            $this->admin_page->registerNetworkMenu();
         }
     }
 
@@ -187,7 +287,8 @@ class BulkPluginInstaller {
     /**
      * Plugin activation handler.
      *
-     * Creates the log database table and sets default option values.
+     * Creates the log database table, sets default option values,
+     * and schedules the expired backup cleanup cron.
      */
     public function activate(): void {
         // Create the activity log table.
@@ -196,7 +297,7 @@ class BulkPluginInstaller {
             $log_manager->createTable();
         }
 
-        // Set default options if they don't already exist.
+        // Set default options if they don't already exist (autoload disabled).
         $defaults = array(
             'bpi_auto_activate'            => false,
             'bpi_max_plugins'              => 20,
@@ -210,29 +311,46 @@ class BulkPluginInstaller {
 
         foreach ( $defaults as $key => $value ) {
             if ( false === get_option( $key ) ) {
-                add_option( $key, $value );
+                add_option( $key, $value, '', false );
             }
+        }
+
+        // Schedule expired backup cleanup cron if not already scheduled.
+        if ( ! wp_next_scheduled( 'bpi_cleanup_expired_backups' ) ) {
+            wp_schedule_event( time(), 'hourly', 'bpi_cleanup_expired_backups' );
         }
     }
 
     /**
      * Plugin deactivation handler.
      *
-     * Cleans up transients and temporary files.
+     * Cleans up transients, temporary files, and scheduled cron events.
      */
     public function deactivate(): void {
-        // Clean up user queue transients.
         global $wpdb;
 
-        // Delete all BPI queue transients.
+        // Delete all BPI queue transients using prepared LIKE queries.
+        $patterns = array(
+            '_transient_bpi_queue_',
+            '_transient_timeout_bpi_queue_',
+            '_transient_bpi_batch_',
+            '_transient_timeout_bpi_batch_',
+            '_transient_bpi_admin_notice_',
+            '_transient_timeout_bpi_admin_notice_',
+        );
+
+        $where_clauses = array();
+        $values        = array();
+        foreach ( $patterns as $prefix ) {
+            $where_clauses[] = 'option_name LIKE %s';
+            $values[]        = $wpdb->esc_like( $prefix ) . '%';
+        }
+
         $wpdb->query(
-            "DELETE FROM {$wpdb->options}
-             WHERE option_name LIKE '_transient_bpi_queue_%'
-                OR option_name LIKE '_transient_timeout_bpi_queue_%'
-                OR option_name LIKE '_transient_bpi_batch_%'
-                OR option_name LIKE '_transient_timeout_bpi_batch_%'
-                OR option_name LIKE '_transient_bpi_admin_notice_%'
-                OR option_name LIKE '_transient_timeout_bpi_admin_notice_%'"
+            $wpdb->prepare(
+                "DELETE FROM {$wpdb->options} WHERE " . implode( ' OR ', $where_clauses ),
+                ...$values
+            )
         );
 
         // Remove temporary backup files.
@@ -240,6 +358,15 @@ class BulkPluginInstaller {
         if ( is_dir( $backup_dir ) ) {
             $this->recursiveRmdir( $backup_dir );
         }
+
+        // Clean up bpi-tmp upload directory.
+        $tmp_dir = wp_upload_dir()['basedir'] . '/bpi-tmp';
+        if ( is_dir( $tmp_dir ) ) {
+            $this->recursiveRmdir( $tmp_dir );
+        }
+
+        // Clear the expired backup cleanup cron.
+        wp_clear_scheduled_hook( 'bpi_cleanup_expired_backups' );
     }
 
     /**
@@ -251,10 +378,11 @@ class BulkPluginInstaller {
     /**
      * Recursively remove a directory and its contents.
      *
-     * @param string $dir Path to the directory to remove.
+     * @param string $dir   Path to the directory to remove.
+     * @param int    $depth Current recursion depth (safety limit: 50).
      */
-    private function recursiveRmdir( string $dir ): void {
-        if ( ! is_dir( $dir ) ) {
+    private function recursiveRmdir( string $dir, int $depth = 0 ): void {
+        if ( $depth > 50 || ! is_dir( $dir ) ) {
             return;
         }
 
@@ -262,6 +390,7 @@ class BulkPluginInstaller {
             new \RecursiveDirectoryIterator( $dir, \RecursiveDirectoryIterator::SKIP_DOTS ),
             \RecursiveIteratorIterator::CHILD_FIRST
         );
+        $items->setMaxDepth( 50 - $depth );
 
         foreach ( $items as $item ) {
             if ( $item->isDir() ) {
@@ -287,15 +416,26 @@ if ( function_exists( 'add_action' ) ) {
 
 // Register WP-CLI commands when WP-CLI is available.
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    $bpi = BulkPluginInstaller::getInstance();
+    $bpi->init();
+
+    $settings_manager = new BPISettingsManager();
+    $log_manager      = new BPILogManager();
+    $rollback_manager = new BPIRollbackManager();
+
+    $notification_manager = new BPINotificationManager( $settings_manager );
+    $batch_rollback_mgr   = new BPIBatchRollbackManager( $rollback_manager, $settings_manager, $log_manager );
+    $batch_rollback_mgr->setNotificationManager( $notification_manager );
+
+    $processor = new BPIPluginProcessor( $rollback_manager, $log_manager, $settings_manager );
+    $processor->setNotificationManager( $notification_manager );
+    $processor->setBatchRollbackManager( $batch_rollback_mgr );
+
     $bpi_cli = new BPICLIInterface(
         new BPIBulkUploader(),
         new BPIQueueManager(),
         new BPICompatibilityChecker(),
-        new BPIPluginProcessor(
-            new BPIRollbackManager(),
-            new BPILogManager(),
-            new BPISettingsManager()
-        ),
+        $processor,
         new BPIProfileManager()
     );
     $bpi_cli->registerCommands();

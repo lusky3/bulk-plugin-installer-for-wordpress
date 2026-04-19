@@ -150,6 +150,10 @@ $wpdb = new class {
         }, $query );
     }
 
+    public function esc_like( string $text ): string {
+        return addcslashes( $text, '_%\\' );
+    }
+
     /**
      * Get the charset collate string for table creation.
      *
@@ -203,6 +207,34 @@ if ( ! function_exists( 'add_action' ) ) {
             'callback' => $callback,
             'priority' => $priority,
         );
+    }
+}
+
+if ( ! function_exists( 'do_action' ) ) {
+    function do_action( string $hook_name, ...$args ): void {}
+}
+
+if ( ! function_exists( 'apply_filters' ) ) {
+    function apply_filters( string $hook_name, $value, ...$args ) {
+        return $value;
+    }
+}
+
+if ( ! function_exists( 'wp_next_scheduled' ) ) {
+    function wp_next_scheduled( string $hook, array $args = array() ) {
+        return false;
+    }
+}
+
+if ( ! function_exists( 'wp_schedule_event' ) ) {
+    function wp_schedule_event( int $timestamp, string $recurrence, string $hook, array $args = array() ): bool {
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_clear_scheduled_hook' ) ) {
+    function wp_clear_scheduled_hook( string $hook, array $args = array() ): int {
+        return 0;
     }
 }
 
@@ -445,6 +477,12 @@ if ( ! function_exists( 'esc_html' ) ) {
     }
 }
 
+if ( ! function_exists( 'esc_js' ) ) {
+    function esc_js( string $text ): string {
+        return addslashes( $text );
+    }
+}
+
 if ( ! function_exists( 'esc_url' ) ) {
     function esc_url( string $url ): string { // NOSONAR
         return filter_var( $url, FILTER_SANITIZE_URL ) ?: '';
@@ -520,6 +558,18 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
      */
     function sanitize_text_field( string $str ): string { // NOSONAR
         return trim( strip_tags( $str ) );
+    }
+}
+
+if ( ! function_exists( 'sanitize_textarea_field' ) ) {
+    function sanitize_textarea_field( string $str ): string {
+        return strip_tags( $str );
+    }
+}
+
+if ( ! function_exists( 'wp_json_encode' ) ) {
+    function wp_json_encode( $data, int $options = 0, int $depth = 512 ) {
+        return json_encode( $data, $options, $depth );
     }
 }
 
@@ -912,6 +962,17 @@ if ( ! function_exists( 'wp_generate_password' ) ) {
             $password .= $chars[ random_int( 0, strlen( $chars ) - 1 ) ];
         }
         return $password;
+    }
+
+    function wp_generate_uuid4(): string {
+        return sprintf(
+            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            random_int( 0, 0xffff ), random_int( 0, 0xffff ),
+            random_int( 0, 0xffff ),
+            random_int( 0, 0x0fff ) | 0x4000,
+            random_int( 0, 0x3fff ) | 0x8000,
+            random_int( 0, 0xffff ), random_int( 0, 0xffff ), random_int( 0, 0xffff )
+        );
     }
 }
 

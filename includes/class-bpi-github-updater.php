@@ -19,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Checks the GitHub Releases API for new plugin versions and injects
  * update data into the WordPress transient. Also provides plugin
  * information (including changelog) via the plugins_api filter.
+ *
+ * @since 1.0.0
  */
 class BPIGithubUpdater {
 
@@ -96,6 +98,8 @@ class BPIGithubUpdater {
 
     /**
      * Register WordPress hooks for update checking and plugin info display.
+     *
+     * @since 1.0.0
      */
     public function registerHooks(): void {
         add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'checkForUpdate' ) );
@@ -107,6 +111,8 @@ class BPIGithubUpdater {
      * Check GitHub for a newer release and inject into the update transient.
      *
      * Hooked to `pre_set_site_transient_update_plugins`.
+     *
+     * @since 1.0.0
      *
      * @param object $transient The update_plugins transient object.
      * @return object Modified transient.
@@ -152,6 +158,8 @@ class BPIGithubUpdater {
      * Hooked to `plugins_api`. Returns an object with plugin metadata,
      * description, changelog, and download link so WordPress can render
      * the standard plugin information thickbox.
+     *
+     * @since 1.0.0
      *
      * @param false|object|array $result The result object or array. Default false.
      * @param string             $action The API action being performed.
@@ -205,6 +213,8 @@ class BPIGithubUpdater {
     /**
      * Add a "View details" link to the plugin row meta on the Plugins page.
      *
+     * @since 1.0.0
+     *
      * @param array  $meta       Array of plugin row meta links.
      * @param string $plugin_file Plugin basename.
      * @return array Modified meta links.
@@ -236,10 +246,15 @@ class BPIGithubUpdater {
     /**
      * Fetch the latest release data from GitHub, with caching.
      *
+     * @since 1.0.0
+     *
      * @return array|null Release data array or null on failure.
      */
     public function getLatestRelease(): ?array {
         $cached = get_transient( self::CACHE_KEY );
+        if ( is_array( $cached ) && ! empty( $cached['_error'] ) ) {
+            return null;
+        }
         if ( false !== $cached && is_array( $cached ) ) {
             return $cached;
         }
@@ -272,7 +287,7 @@ class BPIGithubUpdater {
         );
 
         if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
-            set_transient( self::CACHE_KEY, null, self::FAILURE_TTL );
+            set_transient( self::CACHE_KEY, array( '_error' => true ), self::FAILURE_TTL );
             return null;
         }
 
@@ -524,6 +539,8 @@ class BPIGithubUpdater {
      * Clear the cached release data.
      *
      * Useful after a plugin update completes.
+     *
+     * @since 1.0.0
      */
     public function clearCache(): void {
         delete_transient( self::CACHE_KEY );

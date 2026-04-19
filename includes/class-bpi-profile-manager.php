@@ -7,11 +7,17 @@
  * @package BulkPluginInstaller
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 /**
  * Class BPIProfileManager
  *
  * Handles CRUD operations for plugin installation profiles,
  * JSON export/import, and AJAX handlers for profile management.
+ *
+ * @since 1.0.0
  */
 class BPIProfileManager {
 
@@ -34,6 +40,8 @@ class BPIProfileManager {
 
     /**
      * Save a profile with the given name and plugin list.
+     *
+     * @since 1.0.0
      *
      * @param string $name    Profile name.
      * @param array  $plugins Array of plugin data (slug, name, version).
@@ -66,6 +74,8 @@ class BPIProfileManager {
     /**
      * Get a profile by its ID.
      *
+     * @since 1.0.0
+     *
      * @param int $id Profile ID.
      * @return array|null Profile data or null if not found.
      */
@@ -84,6 +94,8 @@ class BPIProfileManager {
     /**
      * Get all saved profiles.
      *
+     * @since 1.0.0
+     *
      * @return array Array of profile data.
      */
     public function getAllProfiles(): array {
@@ -98,6 +110,8 @@ class BPIProfileManager {
 
     /**
      * Delete a profile by its ID.
+     *
+     * @since 1.0.0
      *
      * @param int $id Profile ID.
      * @return bool True if the profile was deleted, false if not found.
@@ -128,6 +142,8 @@ class BPIProfileManager {
     /**
      * Export a profile as a JSON string.
      *
+     * @since 1.0.0
+     *
      * @param int $id Profile ID.
      * @return string JSON string of the profile, or empty string if not found.
      */
@@ -138,13 +154,31 @@ class BPIProfileManager {
             return '';
         }
 
-        return json_encode( $profile, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+        return wp_json_encode( $profile, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+    }
+
+    /**
+     * Sanitize a plugins array, ensuring each entry has expected keys.
+     *
+     * @param array $raw_plugins Raw plugins data.
+     * @return array Sanitized plugins array.
+     */
+    private function sanitizePlugins( array $raw_plugins ): array {
+        return array_map( function ( $p ) {
+            return array(
+                'slug'    => sanitize_text_field( $p['slug'] ?? '' ),
+                'name'    => sanitize_text_field( $p['name'] ?? '' ),
+                'version' => sanitize_text_field( $p['version'] ?? '' ),
+            );
+        }, $raw_plugins );
     }
 
     /**
      * Import a profile from a JSON string.
      *
      * Validates the JSON structure and creates a new profile with a new ID.
+     *
+     * @since 1.0.0
      *
      * @param string $json JSON string representing a profile.
      * @return int|\WP_Error The new profile ID on success, or WP_Error on failure.
@@ -167,19 +201,24 @@ class BPIProfileManager {
             );
         }
 
+        $plugins = $this->sanitizePlugins( $data['plugins'] );
+
         return $this->saveProfile(
             sanitize_text_field( $data['name'] ),
-            $data['plugins']
+            $plugins
         );
     }
 
     /**
      * Register AJAX handlers for profile management.
+     *
+     * @since 1.0.0
      */
     public function registerAjaxHandlers(): void {
         add_action( 'wp_ajax_bpi_save_profile', array( $this, 'handleAjaxSaveProfile' ) );
         add_action( 'wp_ajax_bpi_import_profile', array( $this, 'handleAjaxImportProfile' ) );
         add_action( 'wp_ajax_bpi_export_profile', array( $this, 'handleAjaxExportProfile' ) );
+        add_action( 'wp_ajax_bpi_delete_profile', array( $this, 'handleAjaxDeleteProfile' ) );
     }
 
     /**
@@ -194,7 +233,7 @@ class BPIProfileManager {
     private function verifyAjaxRequest( string $nonce_action, string $method = 'POST' ): bool {
         $input = 'REQUEST' === $method ? $_REQUEST : $_POST;
 
-        if ( ! isset( $input['_wpnonce'] ) || ! wp_verify_nonce( $input['_wpnonce'], $nonce_action ) ) {
+        if ( ! isset( $input['_wpnonce'] ) || ! wp_verify_nonce( wp_unslash( $input['_wpnonce'] ), $nonce_action ) ) {
             wp_send_json_error(
                 array( 'message' => __( self::MSG_SECURITY_FAILED, 'bulk-plugin-installer' ) ),
                 403
@@ -215,14 +254,16 @@ class BPIProfileManager {
 
     /**
      * AJAX handler: Save a profile.
+     *
+     * @since 1.0.0
      */
     public function handleAjaxSaveProfile(): void {
         if ( ! $this->verifyAjaxRequest( 'bpi_save_profile' ) ) {
             return;
         }
 
-        $name    = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
-        $plugins = isset( $_POST['plugins'] ) ? $_POST['plugins'] : array();
+        $name        = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
+        $raw_plugins = isset( $_POST['plugins'] ) ? wp_unslash( $_POST['plugins'] ) : array();
 
         if ( empty( $name ) ) {
             wp_send_json_error(
@@ -231,12 +272,14 @@ class BPIProfileManager {
             return;
         }
 
-        if ( ! is_array( $plugins ) ) {
+        if ( ! is_array( $raw_plugins ) ) {
             wp_send_json_error(
                 array( 'message' => __( 'Plugins must be an array.', 'bulk-plugin-installer' ) )
             );
             return;
         }
+
+        $plugins = $this->sanitizePlugins( $raw_plugins );
 
         $id = $this->saveProfile( $name, $plugins );
 
@@ -249,6 +292,8 @@ class BPIProfileManager {
 
     /**
      * AJAX handler: Import a profile from JSON.
+     *
+     * @since 1.0.0
      */
     public function handleAjaxImportProfile(): void {
         if ( ! $this->verifyAjaxRequest( 'bpi_import_profile' ) ) {
@@ -282,6 +327,8 @@ class BPIProfileManager {
 
     /**
      * AJAX handler: Export a profile as JSON.
+     *
+     * @since 1.0.0
      */
     public function handleAjaxExportProfile(): void {
         if ( ! $this->verifyAjaxRequest( 'bpi_export_profile', 'REQUEST' ) ) {
@@ -312,9 +359,44 @@ class BPIProfileManager {
     }
 
     /**
+     * AJAX handler: Delete a profile.
+     *
+     * @since 1.0.0
+     */
+    public function handleAjaxDeleteProfile(): void {
+        if ( ! $this->verifyAjaxRequest( 'bpi_delete_profile' ) ) {
+            return;
+        }
+
+        $id = isset( $_POST['profile_id'] ) ? absint( $_POST['profile_id'] ) : 0;
+
+        if ( 0 === $id ) {
+            wp_send_json_error(
+                array( 'message' => __( 'Profile ID is required.', 'bulk-plugin-installer' ) )
+            );
+            return;
+        }
+
+        $deleted = $this->deleteProfile( $id );
+
+        if ( ! $deleted ) {
+            wp_send_json_error(
+                array( 'message' => __( 'Profile not found.', 'bulk-plugin-installer' ) )
+            );
+            return;
+        }
+
+        wp_send_json_success( array(
+            'message' => __( 'Profile deleted successfully.', 'bulk-plugin-installer' ),
+        ) );
+    }
+
+    /**
      * Render the profiles list for the Settings_Page.
      *
      * Displays profile name, creation date, plugin count, and a delete button.
+     *
+     * @since 1.0.0
      */
     public function renderProfilesList(): void {
         $profiles = $this->getAllProfiles();
