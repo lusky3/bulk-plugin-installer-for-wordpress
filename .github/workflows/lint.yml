@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.2', '8.3', '8.4', '8.5']
+        php-version: ['8.3', '8.4', '8.5']
 
     steps:
       - name: Checkout code
@@ -87,7 +87,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.2', '8.3', '8.4', '8.5']
+        php-version: ['8.3', '8.4', '8.5']
 
     steps:
       - name: Checkout code
@@ -128,7 +128,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.2', '8.3', '8.4', '8.5']
+        php-version: ['8.3', '8.4', '8.5']
 
     steps:
       - name: Checkout code
@@ -189,7 +189,7 @@ jobs:
         run: |
           ~/.composer/vendor/bin/phpcs \
             --standard=PHPCompatibility \
-            --runtime-set testVersion 8.2- \
+            --runtime-set testVersion 8.3- \
             --extensions=php \
             --ignore=vendor/,tests/ \
             -q --report=checkstyle \

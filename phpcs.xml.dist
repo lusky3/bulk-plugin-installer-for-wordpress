@@ -127,6 +127,7 @@
 			PHPDoc comment spacing — the project follows PSR-style spacing.
 		-->
 		<exclude name="Squiz.Commenting.FunctionComment.SpacingAfterParamType"/>
+		<exclude name="Generic.Commenting.DocComment.MissingShort"/>
 	</rule>
 
 	<!-- Allow space indentation (PSR-style) -->

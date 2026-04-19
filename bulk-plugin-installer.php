@@ -5,7 +5,7 @@
  * Description:       Upload and install multiple WordPress plugin ZIP files in a single operation with preview, rollback, and profile support.
  * Version:           1.0.2
  * Requires at least: 5.8
- * Requires PHP:      8.2
+ * Requires PHP:      8.3
  * Author:            Cody (lusky3) + Bulk Plugin Installer Contributors
  * Author URI:        https://github.com/lusky3
  * License:           GPL-2.0-or-later

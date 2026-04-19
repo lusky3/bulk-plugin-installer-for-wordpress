@@ -196,7 +196,7 @@ class BootstrapTest extends TestCase {
         $this->assertTrue( defined( 'BPI_PLUGIN_DIR' ) );
         $this->assertTrue( defined( 'BPI_PLUGIN_URL' ) );
         $this->assertTrue( defined( 'BPI_PLUGIN_BASENAME' ) );
-        $this->assertSame( '1.0.1', BPI_VERSION );
+        $this->assertSame( '1.0.2', BPI_VERSION );
     }
 
     /**

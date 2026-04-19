@@ -323,7 +323,7 @@ class BPIGithubUpdater {
             'published_at' => $published,
             'requires'     => '5.8',
             'tested'       => '',
-            'requires_php' => '8.2',
+            'requires_php' => '8.3',
         );
 
         $release_data = $this->parseReleaseMetadata( $release_data );
