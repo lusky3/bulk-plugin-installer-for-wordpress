@@ -93,6 +93,17 @@ The test suite includes 480+ tests with 60,000+ assertions:
 - Unit tests covering all components
 - Property-based tests (using Eris) validating correctness invariants
 
+## Permissions
+
+All plugin functionality requires the `install_plugins` capability (Administrators). No public-facing endpoints exist — unauthenticated users cannot interact with the plugin.
+
+| Context | Required Capability | Role |
+|---------|-------------------|------|
+| Single site | `install_plugins` | Administrator |
+| Multisite (Network Admin) | `manage_network_plugins` | Super Admin |
+
+On individual subsites within a multisite network, the standard `install_plugins` capability applies.
+
 ## Hooks & Extension Points
 
 The plugin provides actions and filters for third-party developers:
