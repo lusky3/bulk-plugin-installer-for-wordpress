@@ -40,6 +40,17 @@ jobs:
           npx terser assets/js/bpi-admin.js -o assets/js/bpi-admin.min.js --compress --mangle
           npx csso-cli assets/css/bpi-admin.css -o assets/css/bpi-admin.min.css
 
+      - name: Optimize images
+        run: |
+          if find assets/ -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.gif" -o -name "*.svg" \) | grep -q .; then
+            npm install --no-save sharp-cli svgo
+            find assets/ -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) -exec npx sharp-cli --input {} --output {} --quality 80 \;
+            find assets/ -type f -name "*.svg" -exec npx svgo --quiet {} \;
+            echo "✅ Images optimized"
+          else
+            echo "No images found, skipping"
+          fi
+
       - name: Generate POT file
         run: |
           mkdir -p languages
