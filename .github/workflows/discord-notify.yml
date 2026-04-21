@@ -1,0 +1,59 @@
+name: Discord Notifications
+
+on:
+  workflow_run:
+    workflows:
+      - Tests
+      - Lint & Coding Standards
+      - Security
+      - Integration Tests
+      - Release
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  notify-failure:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Discord of failure
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "No DISCORD_WEBHOOK secret configured, skipping"
+            exit 0
+          fi
+          curl -s -H "Content-Type: application/json" -d "{
+            \"embeds\": [{
+              \"title\": \"❌ Workflow Failed: ${{ github.event.workflow_run.name }}\",
+              \"description\": \"**Repository:** ${{ github.repository }}\n**Branch:** ${{ github.event.workflow_run.head_branch }}\n**Commit:** \`${{ github.event.workflow_run.head_sha }}\`\",
+              \"url\": \"${{ github.event.workflow_run.html_url }}\",
+              \"color\": 15158332,
+              \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+            }]
+          }" "$DISCORD_WEBHOOK"
+
+  notify-release:
+    if: github.event.workflow_run.name == 'Release' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Discord of release
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "No DISCORD_WEBHOOK secret configured, skipping"
+            exit 0
+          fi
+          curl -s -H "Content-Type: application/json" -d "{
+            \"embeds\": [{
+              \"title\": \"✅ New Release Published\",
+              \"description\": \"**Repository:** ${{ github.repository }}\n**Branch:** ${{ github.event.workflow_run.head_branch }}\",
+              \"url\": \"https://github.com/${{ github.repository }}/releases/latest\",
+              \"color\": 3066993,
+              \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+            }]
+          }" "$DISCORD_WEBHOOK"
