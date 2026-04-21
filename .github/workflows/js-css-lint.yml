@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Run oxlint
-        uses: oxc-project/oxlint-action@v0
+        uses: oxc-project/oxlint-action@v1
         with:
           args: assets/js/
 
