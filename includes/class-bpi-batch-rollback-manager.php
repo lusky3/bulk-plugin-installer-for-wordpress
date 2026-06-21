@@ -134,11 +134,14 @@ class BPIBatchRollbackManager {
         set_transient( self::BATCH_TRANSIENT_PREFIX . $batch_id, $manifest, $expiration );
 
         // Track this batch ID in the active batches list.
-        $active = $this->getActiveBatchIds();
-        if ( ! in_array( $batch_id, $active, true ) ) {
-            $active[] = $batch_id;
+        if ( $this->acquireBatchListLock() ) {
+            $active = $this->getActiveBatchIds();
+            if ( ! in_array( $batch_id, $active, true ) ) {
+                $active[] = $batch_id;
+            }
+            update_option( self::ACTIVE_BATCHES_KEY, $active, false );
+            $this->releaseBatchListLock();
         }
-        update_option( self::ACTIVE_BATCHES_KEY, $active, false );
     }
 
     /**
@@ -360,7 +363,10 @@ class BPIBatchRollbackManager {
             $still_active[] = $batch_id;
         }
 
-        update_option( self::ACTIVE_BATCHES_KEY, $still_active, false );
+        if ( $this->acquireBatchListLock() ) {
+            update_option( self::ACTIVE_BATCHES_KEY, $still_active, false );
+            $this->releaseBatchListLock();
+        }
     }
 
     /**
@@ -424,7 +430,8 @@ class BPIBatchRollbackManager {
 
         if ( empty( $batch_id ) ) {
             wp_send_json_error(
-                array( 'message' => __( 'No batch ID provided.', 'bulk-plugin-installer' ) )
+                array( 'message' => __( 'No batch ID provided.', 'bulk-plugin-installer' ) ),
+                400
             );
             return;
         }
@@ -486,9 +493,38 @@ class BPIBatchRollbackManager {
      * @param string $batch_id Batch ID to remove.
      */
     private function removeBatchId( string $batch_id ): void {
+        if ( ! $this->acquireBatchListLock() ) {
+            return;
+        }
         $active = $this->getActiveBatchIds();
         $active = array_values( array_filter( $active, fn( $id ) => $id !== $batch_id ) );
         update_option( self::ACTIVE_BATCHES_KEY, $active, false );
+        $this->releaseBatchListLock();
+    }
+
+    /**
+     * Acquire a mutex lock for the active batches list.
+     *
+     * @return bool True if lock acquired, false on timeout.
+     */
+    private function acquireBatchListLock(): bool {
+        if ( wp_cache_add( 'bpi_batch_list_lock', 1, 'bpi', 5 ) ) {
+            return true;
+        }
+        for ( $i = 0; $i < 3; $i++ ) {
+            usleep( 100000 );
+            if ( wp_cache_add( 'bpi_batch_list_lock', 1, 'bpi', 5 ) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Release the mutex lock for the active batches list.
+     */
+    private function releaseBatchListLock(): void {
+        wp_cache_delete( 'bpi_batch_list_lock', 'bpi' );
     }
 
     /**

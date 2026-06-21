@@ -292,7 +292,8 @@ class BPIPluginProcessor {
 
         if ( ! is_array( $selected ) || empty( $selected ) ) {
             wp_send_json_error(
-                array( 'message' => __( 'No plugins selected for processing.', 'bulk-plugin-installer' ) )
+                array( 'message' => __( 'No plugins selected for processing.', 'bulk-plugin-installer' ) ),
+                400
             );
             return;
         }
@@ -375,7 +376,8 @@ class BPIPluginProcessor {
 
         if ( ! is_array( $selected ) || empty( $selected ) ) {
             wp_send_json_error(
-                array( 'message' => __( 'No plugins selected for dry run.', 'bulk-plugin-installer' ) )
+                array( 'message' => __( 'No plugins selected for dry run.', 'bulk-plugin-installer' ) ),
+                400
             );
             return;
         }

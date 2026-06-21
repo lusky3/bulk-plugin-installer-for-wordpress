@@ -25,6 +25,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 class BPIBulkUploader {
 
     /**
+     * Injected queue manager instance (optional).
+     *
+     * @var BPIQueueManager|null
+     */
+    private ?BPIQueueManager $queue_manager = null;
+
+    /**
+     * Constructor.
+     *
+     * @param BPIQueueManager|null $queue_manager Optional queue manager for dependency injection.
+     */
+    public function __construct( ?BPIQueueManager $queue_manager = null ) {
+        $this->queue_manager = $queue_manager;
+    }
+
+    /**
      * Standard WordPress plugin headers to extract.
      *
      * @var array<string, string>
@@ -143,9 +159,9 @@ class BPIBulkUploader {
         }
 
         // Add to the queue.
-        $queue_manager = new BPIQueueManager();
+        $queue_manager = $this->queue_manager ?? new BPIQueueManager();
         $was_duplicate = $queue_manager->hasDuplicate( $slug );
-        $queue_manager->add( $dest_path, array(
+        $added = $queue_manager->add( $dest_path, array(
             'slug'               => $slug,
             'file_name'          => $file_name,
             'file_size'          => $file_size,
@@ -158,6 +174,14 @@ class BPIBulkUploader {
             'action'             => $action,
             'installed_version'  => $installed_version,
         ) );
+
+        if ( ! $added ) {
+            wp_send_json_error(
+                array( 'message' => __( 'Failed to add plugin to queue. Please try again.', 'bulk-plugin-installer' ) ),
+                500
+            );
+            return;
+        }
 
         wp_send_json_success(
             array(

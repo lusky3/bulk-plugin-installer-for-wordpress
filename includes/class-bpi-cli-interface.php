@@ -364,8 +364,9 @@ class BPICLIInterface {
     private function validateFiles( array $file_paths ): ?array {
         $plugins = array();
 
+        $installed_plugins = function_exists( 'get_plugins' ) ? get_plugins() : array();
         foreach ( $file_paths as $path ) {
-            $plugin = $this->validateSingleFile( $path );
+            $plugin = $this->validateSingleFile( $path, $installed_plugins );
             if ( null !== $plugin ) {
                 $plugins[] = $plugin;
             }
@@ -383,10 +384,11 @@ class BPICLIInterface {
     /**
      * Validate a single ZIP file and extract plugin data.
      *
-     * @param string $path File path to validate.
+     * @param string $path              File path to validate.
+     * @param array  $installed_plugins Pre-fetched installed plugins to avoid repeated get_plugins() calls.
      * @return array|null Plugin data array or null if invalid.
      */
-    private function validateSingleFile( string $path ): ?array {
+    private function validateSingleFile( string $path, array $installed_plugins = array() ): ?array {
         if ( ! file_exists( $path ) ) {
             \WP_CLI::warning( sprintf( __( 'File not found: %s', 'bulk-plugin-installer' ), $path ) );
             return null;
@@ -402,7 +404,9 @@ class BPICLIInterface {
             return null;
         }
         $slug = $analysis['slug'] ?? '';
-        $installed_plugins = function_exists( 'get_plugins' ) ? get_plugins() : array();
+        if ( empty( $installed_plugins ) ) {
+            $installed_plugins = function_exists( 'get_plugins' ) ? get_plugins() : array();
+        }
         $action = 'install';
         $installed_version = null;
         $plugin_file = $slug . '/' . $slug . '.php';
