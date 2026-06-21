@@ -513,7 +513,7 @@ class BPIBatchRollbackManager {
         }
         for ( $i = 0; $i < 3; $i++ ) {
             usleep( 100000 );
-            if ( wp_cache_add( 'bpi_batch_list_lock', 1, 'bpi', 5 ) ) {
+            if ( wp_cache_add( 'bpi_batch_list_lock', 1, 'bpi', 5 ) ) { // @phpstan-ignore if.alwaysFalse
                 return true;
             }
         }
