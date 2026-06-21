@@ -857,6 +857,41 @@ if ( ! function_exists( 'delete_transient' ) ) {
     }
 }
 
+// ---- Object cache stubs ----
+
+global $bpi_test_cache;
+$bpi_test_cache = array();
+
+if ( ! function_exists( 'wp_cache_add' ) ) {
+    function wp_cache_add( $key, $data = '', $group = '', $expire = 0 ) { // NOSONAR
+        global $bpi_test_cache;
+        if ( ! isset( $bpi_test_cache ) ) $bpi_test_cache = array();
+        $cache_key = $group . ':' . $key;
+        if ( isset( $bpi_test_cache[ $cache_key ] ) ) return false;
+        $bpi_test_cache[ $cache_key ] = $data;
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_cache_delete' ) ) {
+    function wp_cache_delete( $key, $group = '' ): bool { // NOSONAR
+        global $bpi_test_cache;
+        if ( ! isset( $bpi_test_cache ) ) $bpi_test_cache = array();
+        unset( $bpi_test_cache[ $group . ':' . $key ] );
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_cache_get' ) ) {
+    function wp_cache_get( $key, $group = '', $force = false, &$found = null ) { // NOSONAR
+        global $bpi_test_cache;
+        if ( ! isset( $bpi_test_cache ) ) $bpi_test_cache = array();
+        $cache_key = $group . ':' . $key;
+        if ( isset( $bpi_test_cache[ $cache_key ] ) ) { $found = true; return $bpi_test_cache[ $cache_key ]; }
+        $found = false; return false;
+    }
+}
+
 // Global to control the WordPress version returned by get_bloginfo().
 global $bpi_test_wp_version;
 $bpi_test_wp_version = '6.7.0';

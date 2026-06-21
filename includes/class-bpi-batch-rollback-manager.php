@@ -154,15 +154,18 @@ class BPIBatchRollbackManager {
      * @return array Rollback results with 'success', 'failures', and 'results' keys.
      */
     public function rollbackBatch( string $batch_id ): array {
-        $manifest = $this->getBatchManifest( $batch_id );
+        $manifest = get_transient( self::BATCH_TRANSIENT_PREFIX . $batch_id );
 
-        if ( empty( $manifest ) ) {
+        if ( false === $manifest || ! is_array( $manifest ) ) {
             return array(
                 'success'  => false,
-                'failures' => array( __( 'Batch manifest not found.', 'bulk-plugin-installer' ) ),
+                'failures' => array( __( 'Batch manifest not found or already being rolled back.', 'bulk-plugin-installer' ) ),
                 'results'  => array(),
             );
         }
+
+        // Atomically claim this rollback by deleting the transient immediately.
+        delete_transient( self::BATCH_TRANSIENT_PREFIX . $batch_id );
 
         $plugins  = $manifest['plugins'] ?? array();
         $results  = array();
@@ -194,8 +197,6 @@ class BPIBatchRollbackManager {
             )
         );
 
-        // Clean up the batch transient after rollback.
-        delete_transient( self::BATCH_TRANSIENT_PREFIX . $batch_id );
         $this->removeBatchId( $batch_id );
 
         return array(

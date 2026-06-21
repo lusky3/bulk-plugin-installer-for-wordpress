@@ -175,6 +175,18 @@ class BPIPluginProcessor {
             );
         }
 
+        if ( ! $dry_run && empty( $plugin_data['file_path'] ) ) {
+            return array(
+                'slug'        => $slug,
+                'plugin_name' => $plugin_name,
+                'action'      => $action,
+                'status'      => 'failed',
+                'messages'    => array( sprintf( __( 'File path missing for "%s".', 'bulk-plugin-installer' ), $plugin_name ) ),
+                'activated'   => false,
+                'rolled_back' => false,
+            );
+        }
+
         $log_ctx = array(
             'action' => $action, 'slug' => $slug, 'plugin_name' => $plugin_name,
             'old_version' => $old_version, 'new_version' => $new_version,
@@ -732,6 +744,14 @@ class BPIPluginProcessor {
             } else {
                 $sanitized['file_path'] = '';
             }
+
+            // Validate plugin_file matches slug prefix.
+            $slug        = $sanitized['slug'];
+            $plugin_file = $sanitized['plugin_file'];
+            if ( '' !== $plugin_file && '' !== $slug && ! str_starts_with( $plugin_file, $slug . '/' ) ) {
+                $sanitized['plugin_file'] = $slug . '/' . $slug . '.php';
+            }
+
             return $sanitized;
         }, $selected );
     }

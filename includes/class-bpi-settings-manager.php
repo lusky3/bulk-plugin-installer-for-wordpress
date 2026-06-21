@@ -46,6 +46,13 @@ class BPISettingsManager {
     private const SECTION_ID = 'bpi_general_section';
 
     /**
+     * Optional log manager instance for dependency injection.
+     *
+     * @var ?BPILogManager
+     */
+    private ?BPILogManager $log_manager = null;
+
+    /**
      * Default values for all settings.
      *
      * @var array<string, mixed>
@@ -60,6 +67,15 @@ class BPISettingsManager {
         'bpi_email_recipients'         => '',
         'bpi_delete_data_on_uninstall' => false,
     );
+
+    /**
+     * Set the log manager instance for dependency injection.
+     *
+     * @param BPILogManager $log_manager Log manager instance.
+     */
+    public function setLogManager( BPILogManager $log_manager ): void {
+        $this->log_manager = $log_manager;
+    }
 
     /**
      * Register all settings with the WordPress Settings API.
@@ -467,7 +483,7 @@ class BPISettingsManager {
      * Render the activity log section with the last 50 entries and a clear button.
      */
     private function renderLogSection(): void {
-        $log_manager = new BPILogManager();
+        $log_manager = $this->log_manager ?? new BPILogManager();
         $entries     = $log_manager->getEntries( 50 );
 
         if ( empty( $entries ) ) {

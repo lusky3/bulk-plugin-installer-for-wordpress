@@ -388,82 +388,39 @@ class BPICLIInterface {
      */
     private function validateSingleFile( string $path ): ?array {
         if ( ! file_exists( $path ) ) {
-            \WP_CLI::warning(
-                sprintf(
-                    /* translators: %s: file path */
-                    __( 'File not found: %s', 'bulk-plugin-installer' ),
-                    $path
-                )
-            );
+            \WP_CLI::warning( sprintf( __( 'File not found: %s', 'bulk-plugin-installer' ), $path ) );
             return null;
         }
-
-        $validation = $this->uploader->validateZip( $path );
-        if ( is_wp_error( $validation ) ) {
-            \WP_CLI::warning(
-                sprintf(
-                    /* translators: 1: file path, 2: error message */
-                    __( 'Invalid file "%1$s": %2$s', 'bulk-plugin-installer' ),
-                    basename( $path ),
-                    $validation->get_error_message()
-                )
-            );
+        $analysis = $this->uploader->analyzeZip( $path );
+        if ( is_wp_error( $analysis ) ) {
+            \WP_CLI::warning( sprintf( __( 'Invalid file "%1$s": %2$s', 'bulk-plugin-installer' ), basename( $path ), $analysis->get_error_message() ) );
             return null;
         }
-
-        return $this->buildPluginDataFromFile( $path );
-    }
-
-    /**
-     * Build plugin data array from a validated ZIP file.
-     *
-     * @param string $path Path to the validated ZIP file.
-     * @return array|null Plugin data array or null if no valid header found.
-     */
-    private function buildPluginDataFromFile( string $path ): ?array {
-        $headers = $this->uploader->extractPluginHeaders( $path );
+        $headers = $analysis['headers'] ?? array();
         if ( empty( $headers['plugin_name'] ) ) {
-            \WP_CLI::warning(
-                sprintf(
-                    /* translators: %s: file path */
-                    __( 'No valid plugin header found in "%s".', 'bulk-plugin-installer' ),
-                    basename( $path )
-                )
-            );
+            \WP_CLI::warning( sprintf( __( 'No valid plugin header found in "%s".', 'bulk-plugin-installer' ), basename( $path ) ) );
             return null;
         }
-
-        $slug = $this->uploader->getPluginSlug( $path );
-
-        // Determine action (install vs update).
+        $slug = $analysis['slug'] ?? '';
         $installed_plugins = function_exists( 'get_plugins' ) ? get_plugins() : array();
-        $action            = 'install';
+        $action = 'install';
         $installed_version = null;
-        $plugin_file       = $slug . '/' . $slug . '.php';
-
+        $plugin_file = $slug . '/' . $slug . '.php';
         foreach ( $installed_plugins as $file => $data ) {
             if ( strpos( $file, $slug . '/' ) === 0 ) {
-                $action            = 'update';
+                $action = 'update';
                 $installed_version = $data['Version'] ?? null;
-                $plugin_file       = $file;
+                $plugin_file = $file;
                 break;
             }
         }
-
         return array(
-            'slug'              => $slug,
-            'file_path'         => $path,
-            'file_name'         => basename( $path ),
-            'file_size'         => filesize( $path ),
-            'plugin_name'       => $headers['plugin_name'] ?? '',
-            'plugin_version'    => $headers['plugin_version'] ?? '',
-            'plugin_author'     => $headers['plugin_author'] ?? '',
-            'plugin_description' => $headers['plugin_description'] ?? '',
-            'requires_php'      => $headers['requires_php'] ?? '',
-            'requires_wp'       => $headers['requires_wp'] ?? '',
-            'action'            => $action,
-            'installed_version' => $installed_version,
-            'plugin_file'       => $plugin_file,
+            'slug' => $slug, 'file_path' => $path, 'file_name' => basename( $path ),
+            'file_size' => filesize( $path ), 'plugin_name' => $headers['plugin_name'] ?? '',
+            'plugin_version' => $headers['version'] ?? '', 'plugin_author' => $headers['author'] ?? '',
+            'plugin_description' => $headers['description'] ?? '', 'requires_php' => $headers['requires_php'] ?? '',
+            'requires_wp' => $headers['requires_wp'] ?? '', 'action' => $action,
+            'installed_version' => $installed_version, 'plugin_file' => $plugin_file,
         );
     }
 

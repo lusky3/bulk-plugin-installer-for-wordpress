@@ -32,12 +32,54 @@ class BPIQueueManager {
     private const TRANSIENT_EXPIRATION = 3600;
 
     /**
+     * Request-local cache for the queue to avoid redundant getAll() calls.
+     *
+     * @var array|null
+     */
+    private ?array $cache = null;
+
+    /**
+     * User ID associated with the current cache.
+     *
+     * @var int
+     */
+    private int $cacheUserId = 0;
+
+    /**
      * Get the transient key for the current user's queue.
      *
      * @return string Transient key.
      */
     private function getTransientKey(): string {
         return 'bpi_queue_' . get_current_user_id();
+    }
+
+    /**
+     * Acquire an atomic lock for queue operations.
+     *
+     * Uses wp_cache_add() which is atomic — returns false if key already exists.
+     *
+     * @return bool True if lock acquired, false on timeout.
+     */
+    private function acquireLock(): bool {
+        $lock_key = 'bpi_queue_lock_' . get_current_user_id();
+        if ( wp_cache_add( $lock_key, 1, 'bpi', 10 ) ) {
+            return true;
+        }
+        for ( $i = 0; $i < 5; $i++ ) {
+            usleep( 200000 );
+            if ( wp_cache_add( $lock_key, 1, 'bpi', 10 ) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Release the queue lock.
+     */
+    private function releaseLock(): void {
+        wp_cache_delete( 'bpi_queue_lock_' . get_current_user_id(), 'bpi' );
     }
 
     /**
@@ -53,20 +95,16 @@ class BPIQueueManager {
      * @return bool True on success, false on failure.
      */
     public function add( string $file_path, array $plugin_data ): bool {
-        $lock_key = $this->getTransientKey() . '_lock';
-        $max_wait = 5;
-        $waited = 0;
-        while ( get_transient( $lock_key ) && $waited < $max_wait ) {
-            usleep( 200000 ); // 200ms
-            $waited++;
+        if ( ! $this->acquireLock() ) {
+            return false;
         }
-        set_transient( $lock_key, 1, 10 );
 
+        $this->cache = null;
         $queue = $this->getAll();
         $slug  = $plugin_data['slug'] ?? '';
 
         if ( '' === $slug ) {
-            delete_transient( $lock_key );
+            $this->releaseLock();
             return false;
         }
 
@@ -98,7 +136,8 @@ class BPIQueueManager {
         $queue[] = $item;
 
         $result = set_transient( $this->getTransientKey(), $queue, self::TRANSIENT_EXPIRATION );
-        delete_transient( $lock_key );
+        $this->cache = null;
+        $this->releaseLock();
 
         return $result;
     }
@@ -112,15 +151,11 @@ class BPIQueueManager {
      * @return bool True if the item was found and removed, false otherwise.
      */
     public function remove( string $slug ): bool {
-        $lock_key = $this->getTransientKey() . '_lock';
-        $max_wait = 5;
-        $waited = 0;
-        while ( get_transient( $lock_key ) && $waited < $max_wait ) {
-            usleep( 200000 ); // 200ms
-            $waited++;
+        if ( ! $this->acquireLock() ) {
+            return false;
         }
-        set_transient( $lock_key, 1, 10 );
 
+        $this->cache = null;
         $queue    = $this->getAll();
         $original = count( $queue );
 
@@ -131,7 +166,7 @@ class BPIQueueManager {
         $queue = array_values( $queue );
 
         if ( count( $queue ) === $original ) {
-            delete_transient( $lock_key );
+            $this->releaseLock();
             return false;
         }
 
@@ -141,7 +176,8 @@ class BPIQueueManager {
             set_transient( $this->getTransientKey(), $queue, self::TRANSIENT_EXPIRATION );
         }
 
-        delete_transient( $lock_key );
+        $this->cache = null;
+        $this->releaseLock();
         return true;
     }
 
@@ -153,8 +189,14 @@ class BPIQueueManager {
      * @return array Array of queue items.
      */
     public function getAll(): array {
+        $user_id = get_current_user_id();
+        if ( null !== $this->cache && $this->cacheUserId === $user_id ) {
+            return $this->cache;
+        }
         $queue = get_transient( $this->getTransientKey() );
-        return is_array( $queue ) ? $queue : array();
+        $this->cache = is_array( $queue ) ? $queue : array();
+        $this->cacheUserId = $user_id;
+        return $this->cache;
     }
 
     /**
@@ -164,6 +206,7 @@ class BPIQueueManager {
      */
     public function clear(): void {
         delete_transient( $this->getTransientKey() );
+        $this->cache = null;
     }
 
     /**
