@@ -511,6 +511,12 @@ if ( ! function_exists( 'admin_url' ) ) {
     }
 }
 
+if ( ! function_exists( 'self_admin_url' ) ) {
+    function self_admin_url( string $path = '' ): string {
+        return 'https://example.com/wp-admin/' . ltrim( $path, '/' );
+    }
+}
+
 if ( ! function_exists( 'checked' ) ) {
     function checked( $checked, $current = true, bool $display = true ): string {
         $result = ( (string) $checked === (string) $current ) ? " checked='checked'" : '';

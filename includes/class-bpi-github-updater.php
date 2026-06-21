@@ -272,7 +272,7 @@ class BPIGithubUpdater {
      *
      * @return array|null Decoded JSON body or null on failure.
      */
-    private function fetchReleaseFromApi(): ?array {
+    protected function fetchReleaseFromApi(): ?array {
         $user_agent = 'BulkPluginInstaller/' . ( defined( 'BPI_VERSION' ) ? BPI_VERSION : '1.0.0' );
 
         $response = wp_remote_get(
