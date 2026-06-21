@@ -9,16 +9,16 @@
     "packages-dev": [
         {
             "name": "giorgiosironi/eris",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/giorgiosironi/eris.git",
-                "reference": "ffc757f08710b2b8fb1b30cff7b1cf48f5aba11d"
+                "reference": "be4969c653431ba8de75bff16efcb825742c7177"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/giorgiosironi/eris/zipball/ffc757f08710b2b8fb1b30cff7b1cf48f5aba11d",
-                "reference": "ffc757f08710b2b8fb1b30cff7b1cf48f5aba11d",
+                "url": "https://api.github.com/repos/giorgiosironi/eris/zipball/be4969c653431ba8de75bff16efcb825742c7177",
+                "reference": "be4969c653431ba8de75bff16efcb825742c7177",
                 "shasum": ""
             },
             "require": {
@@ -26,16 +26,15 @@
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.0",
-                "ilario-pierbattista/reverse-regex": "^0.4.0",
-                "phpstan/phpstan": "^1.10",
-                "phpunit/phpunit": "^10.0.4",
+                "ilario-pierbattista/reverse-regex": "0.5.0",
+                "phpstan/phpstan": "^2.0",
+                "phpunit/phpunit": "^10.0.4 || ^11.0 || ^12.0 || ^13.0",
                 "psalm/phar": "^5.4",
-                "rector/rector": "^0.18",
+                "rector/rector": "^2.0",
                 "sebastian/comparator": ">=2.1.3"
             },
             "suggest": {
-                "icomefromthenet/reverse-regex": "v0.0.6.3 for the regex() Generator",
-                "ilario-pierbattista/reverse-regex": "0.3.1 for the regex() Generator (alternative to icomefromthenet/reverse-regex) ",
+                "ilario-pierbattista/reverse-regex": "0.5.0 for the regex() Generator",
                 "phpunit/phpunit": "Standard way to run generated test cases"
             },
             "type": "library",
@@ -68,9 +67,9 @@
             "description": "PHP library for property-based testing. Integrates with PHPUnit.",
             "support": {
                 "issues": "https://github.com/giorgiosironi/eris/issues",
-                "source": "https://github.com/giorgiosironi/eris/tree/1.0.0"
+                "source": "https://github.com/giorgiosironi/eris/tree/1.1.0"
             },
-            "time": "2024-12-07T08:21:20+00:00"
+            "time": "2026-03-31T04:14:43+00:00"
         },
         {
             "name": "myclabs/deep-copy",
