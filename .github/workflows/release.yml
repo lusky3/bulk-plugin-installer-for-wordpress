@@ -189,14 +189,15 @@ jobs:
           cat checksums.txt
 
       - name: Sign release ZIP
+        id: sign
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import 2>/dev/null || true
           if gpg --list-secret-keys --keyid-format=long 2>/dev/null | grep -q sec; then
             gpg --batch --yes --armor --detach-sign /tmp/bulk-plugin-installer-${{ steps.version.outputs.tag }}.zip
-            echo "✅ ZIP signed"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
           else
             echo "⚠️ No GPG key available, skipping signature"
-            touch /tmp/bulk-plugin-installer-${{ steps.version.outputs.tag }}.zip.asc
+            echo "signed=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create GitHub Release
@@ -205,8 +206,13 @@ jobs:
           body_path: /tmp/changelog.md
           files: |
             /tmp/bulk-plugin-installer-${{ steps.version.outputs.tag }}.zip
-            /tmp/bulk-plugin-installer-${{ steps.version.outputs.tag }}.zip.asc
             /tmp/checksums.txt
             sbom-bulk-plugin-installer-${{ steps.version.outputs.tag }}.spdx.json
           generate_release_notes: true
           fail_on_unmatched_files: false
+
+      - name: Attach signature to release
+        if: steps.sign.outputs.signed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: /tmp/bulk-plugin-installer-${{ steps.version.outputs.tag }}.zip.asc
