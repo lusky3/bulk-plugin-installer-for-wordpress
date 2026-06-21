@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: matrix.php-version == '8.4' && matrix.wp-version == '6.9' && env.CODECOV_TOKEN != ''
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: coverage-unit.xml,coverage-property.xml
           flags: unittests,propertytests
