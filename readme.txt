@@ -4,7 +4,7 @@ Tags: bulk, plugin, installer, upload, batch
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 8.3
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -79,6 +79,15 @@ Yes. Deactivation only cleans up temporary data (queue transients and backup fil
 
 == Changelog ==
 
+= 1.0.4 =
+* Security: Atomic queue locking with wp_cache_add (prevents concurrent upload data corruption)
+* Security: Batch rollback mutex prevents concurrent rollbacks from corrupting plugin files
+* Security: Validate plugin_file matches slug/ prefix (prevents path traversal)
+* Security: Reject empty file_path entries before processing
+* Performance: CLI uses single analyzeZip() call instead of 3 separate ZIP opens
+* Performance: Request-local cache in queue manager reduces database reads
+* Improvement: Settings manager accepts BPILogManager via dependency injection
+
 = 1.0.2 =
 * Security: Input sanitization on profile save/import and plugin processor
 * Security: File path validation against bpi-tmp directory
@@ -114,6 +123,9 @@ Yes. Deactivation only cleans up temporary data (queue transients and backup fil
 * Activity logging
 
 == Upgrade Notice ==
+
+= 1.0.4 =
+Security hardening: fixes race conditions in queue and batch rollback, validates plugin_file paths.
 
 = 1.0.2 =
 Security hardening, bug fixes for rollback/profile buttons, performance improvements, and PHP 8.3 minimum.
