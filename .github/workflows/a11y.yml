@@ -64,29 +64,70 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Install axe-core CLI
-        run: npm install --no-save @axe-core/cli
-
-      - name: Login and get cookie
+      - name: Install Playwright and axe
         run: |
-          # Get login cookie for admin pages
-          curl -c /tmp/cookies.txt -d "log=admin&pwd=admin&wp-submit=Log+In&redirect_to=%2Fwp-admin%2F" \
-            http://localhost:8080/wp-login.php -L -s -o /dev/null
+          npm install --no-save playwright @axe-core/playwright
+          npx playwright install chromium --with-deps
 
-      - name: Run axe on Bulk Upload page
+      - name: Run accessibility audit
         run: |
-          npx axe http://localhost:8080/wp-admin/plugins.php?page=bpi-bulk-upload \
-            --include "#bpi-bulk-upload-app,#bpi-bulk-upload-wrap" \
-            --tags wcag2a,wcag2aa,best-practice \
-            --exit \
-            --header "Cookie: $(cat /tmp/cookies.txt | grep wordpress_logged_in | awk '{print $6"="$7}')"
+          node << 'EOF'
+          const { chromium } = require('playwright');
+          const { AxeBuilder } = require('@axe-core/playwright');
 
-      - name: Run axe on Settings page
-        run: |
-          npx axe http://localhost:8080/wp-admin/options-general.php?page=bpi-settings \
-            --include ".wrap" \
-            --tags wcag2a,wcag2aa,best-practice \
-            --exit \
-            --header "Cookie: $(cat /tmp/cookies.txt | grep wordpress_logged_in | awk '{print $6"="$7}')"
+          (async () => {
+            const browser = await chromium.launch();
+            const context = await browser.newContext();
+            const page = await context.newPage();
+
+            // Login
+            await page.goto('http://localhost:8080/wp-login.php');
+            await page.fill('#user_login', 'admin');
+            await page.fill('#user_pass', 'admin');
+            await page.click('#wp-submit');
+            await page.waitForURL('**/wp-admin/**');
+
+            const results = [];
+
+            // Audit Bulk Upload page
+            await page.goto('http://localhost:8080/wp-admin/plugins.php?page=bpi-bulk-upload');
+            await page.waitForSelector('#bpi-bulk-upload-app');
+            const uploadResults = await new AxeBuilder({ page })
+              .include('#bpi-bulk-upload-wrap')
+              .withTags(['wcag2a', 'wcag2aa', 'best-practice'])
+              .analyze();
+            results.push({ page: 'Bulk Upload', violations: uploadResults.violations });
+
+            // Audit Settings page
+            await page.goto('http://localhost:8080/wp-admin/options-general.php?page=bpi-settings');
+            await page.waitForSelector('.wrap');
+            const settingsResults = await new AxeBuilder({ page })
+              .include('.wrap')
+              .withTags(['wcag2a', 'wcag2aa', 'best-practice'])
+              .analyze();
+            results.push({ page: 'Settings', violations: settingsResults.violations });
+
+            await browser.close();
+
+            // Report
+            let hasViolations = false;
+            for (const r of results) {
+              if (r.violations.length > 0) {
+                hasViolations = true;
+                console.log(`\n❌ ${r.page} page: ${r.violations.length} violation(s)`);
+                for (const v of r.violations) {
+                  console.log(`  [${v.impact}] ${v.id}: ${v.description}`);
+                  for (const node of v.nodes.slice(0, 3)) {
+                    console.log(`    - ${node.html.substring(0, 120)}`);
+                  }
+                }
+              } else {
+                console.log(`✅ ${r.page} page: No violations`);
+              }
+            }
+
+            if (hasViolations) process.exit(1);
+          })();
+          EOF

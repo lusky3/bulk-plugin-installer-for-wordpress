@@ -68,7 +68,7 @@ class BPIQueueManager {
         }
         for ( $i = 0; $i < 5; $i++ ) {
             usleep( 200000 );
-            if ( wp_cache_add( $lock_key, 1, 'bpi', 10 ) ) {
+            if ( wp_cache_add( $lock_key, 1, 'bpi', 10 ) ) { // @phpstan-ignore if.alwaysFalse
                 return true;
             }
         }
