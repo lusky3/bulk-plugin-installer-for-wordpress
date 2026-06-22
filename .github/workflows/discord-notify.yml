@@ -21,6 +21,11 @@ jobs:
       - name: Notify Discord of failure
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
         run: |
           if [ -z "$DISCORD_WEBHOOK" ]; then
             echo "No DISCORD_WEBHOOK secret configured, skipping"
@@ -28,9 +33,9 @@ jobs:
           fi
           curl -s -H "Content-Type: application/json" -d "{
             \"embeds\": [{
-              \"title\": \"❌ Workflow Failed: ${{ github.event.workflow_run.name }}\",
-              \"description\": \"**Repository:** ${{ github.repository }}\n**Branch:** ${{ github.event.workflow_run.head_branch }}\n**Commit:** \`${{ github.event.workflow_run.head_sha }}\`\",
-              \"url\": \"${{ github.event.workflow_run.html_url }}\",
+              \"title\": \"❌ Workflow Failed: $WORKFLOW_NAME\",
+              \"description\": \"**Repository:** $REPOSITORY\n**Branch:** $HEAD_BRANCH\n**Commit:** \`$HEAD_SHA\`\",
+              \"url\": \"$WORKFLOW_URL\",
               \"color\": 15158332,
               \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
             }]
@@ -43,6 +48,8 @@ jobs:
       - name: Notify Discord of release
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
           if [ -z "$DISCORD_WEBHOOK" ]; then
             echo "No DISCORD_WEBHOOK secret configured, skipping"
@@ -51,8 +58,8 @@ jobs:
           curl -s -H "Content-Type: application/json" -d "{
             \"embeds\": [{
               \"title\": \"✅ New Release Published\",
-              \"description\": \"**Repository:** ${{ github.repository }}\n**Branch:** ${{ github.event.workflow_run.head_branch }}\",
-              \"url\": \"https://github.com/${{ github.repository }}/releases/latest\",
+              \"description\": \"**Repository:** $REPOSITORY\n**Branch:** $HEAD_BRANCH\",
+              \"url\": \"https://github.com/$REPOSITORY/releases/latest\",
               \"color\": 3066993,
               \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
             }]
