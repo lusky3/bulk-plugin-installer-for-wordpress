@@ -14,7 +14,7 @@ permissions:
 jobs:
   plugin-check:
     name: WordPress Plugin Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # Informational only — this plugin is distributed via GitHub, not wordpress.org.
     # Text domain mismatch (repo name vs plugin slug) is expected.
     continue-on-error: true

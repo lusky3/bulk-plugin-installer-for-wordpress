@@ -11,7 +11,7 @@ permissions:
 jobs:
   stale:
     name: Close stale issues and PRs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Mark and close stale issues/PRs
