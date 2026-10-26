@@ -21,7 +21,7 @@ permissions: {}
 jobs:
   composer-audit:
     name: Composer Audit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
 
@@ -44,7 +44,7 @@ jobs:
 
   security-sniffs:
     name: WordPress VIP Security Sniffs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
 
@@ -86,7 +86,7 @@ jobs:
 
   gitguardian:
     name: GitGuardian Secret Scanning
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     if: github.event_name != 'schedule'
@@ -105,7 +105,7 @@ jobs:
 
   snyk:
     name: Snyk Vulnerability Scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
 
@@ -133,7 +133,7 @@ jobs:
 
   sonarqube:
     name: SonarQube Analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       actions: read

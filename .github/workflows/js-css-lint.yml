@@ -14,7 +14,7 @@ permissions:
 jobs:
   oxlint:
     name: oxlint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -26,7 +26,7 @@ jobs:
 
   stylelint:
     name: Stylelint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -34,7 +34,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install Stylelint with WordPress config
         run: npm install --no-save stylelint @wordpress/stylelint-config

@@ -23,7 +23,7 @@ permissions: {}
 jobs:
   test:
     name: PHP ${{ matrix.php-version }} / WP ${{ matrix.wp-version }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     continue-on-error: ${{ matrix.php-version == '8.5' }}
     permissions:
       contents: read
