@@ -117,7 +117,7 @@ jobs:
 
       - name: Run PHPMD
         run: |
-          phpmd includes/,bulk-plugin-installer.php text phpmd-ruleset.xml
+          phpmd analyze --no-progress --format text --ruleset phpmd-ruleset.xml includes/ bulk-plugin-installer.php
 
   phpstan:
     name: PHPStan (PHP ${{ matrix.php-version }})
