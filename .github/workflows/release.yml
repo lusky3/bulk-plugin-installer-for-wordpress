@@ -201,7 +201,7 @@ jobs:
           fi
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: /tmp/changelog.md
           files: |
@@ -213,6 +213,6 @@ jobs:
 
       - name: Attach signature to release
         if: steps.sign.outputs.signed == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: /tmp/bulk-plugin-installer-${{ steps.version.outputs.tag }}.zip.asc
