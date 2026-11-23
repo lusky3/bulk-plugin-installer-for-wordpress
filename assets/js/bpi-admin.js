@@ -87,15 +87,15 @@
 
 			// File input sits outside the role="button" zone to avoid nested
 			// interactive controls; the zone triggers it on click and keyboard.
-			$('<input>', {
-				type: 'file',
-				id: 'bpi-file-input',
-				'class': 'bpi-upload-zone__input',
-				multiple: true,
-				accept: '.zip',
-				tabindex: -1,
-				'aria-label': t.selectFilesLabel
-			}).insertAfter(this.$app.find('#bpi-upload-zone'));
+			const fileInput = document.createElement('input');
+			fileInput.type = 'file';
+			fileInput.id = 'bpi-file-input';
+			fileInput.className = 'bpi-upload-zone__input';
+			fileInput.multiple = true;
+			fileInput.accept = '.zip';
+			fileInput.tabIndex = -1;
+			fileInput.setAttribute('aria-label', t.selectFilesLabel);
+			this.$app.find('#bpi-upload-zone').after(fileInput);
 
 			this.$liveRegion = $('#bpi-live-region');
 		},
