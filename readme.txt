@@ -4,7 +4,7 @@ Tags: bulk, plugin, installer, upload, batch
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 8.3
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -79,6 +79,12 @@ Yes. Deactivation only cleans up temporary data (queue transients and backup fil
 
 == Changelog ==
 
+= 1.0.5 =
+* Accessibility: Upload file input no longer nested inside the drop zone button (fixes nested-interactive)
+* Accessibility: Settings number and text fields now have proper associated labels
+* Improvement: Replace deprecated CSS clip/word-wrap with clip-path/overflow-wrap
+* Maintenance: Update PHPUnit and CI tooling to latest versions
+
 = 1.0.4 =
 * Security: Atomic queue locking with wp_cache_add (prevents concurrent upload data corruption)
 * Security: Batch rollback mutex prevents concurrent rollbacks from corrupting plugin files
@@ -123,6 +129,9 @@ Yes. Deactivation only cleans up temporary data (queue transients and backup fil
 * Activity logging
 
 == Upgrade Notice ==
+
+= 1.0.5 =
+Accessibility fixes for the upload screen and settings page, plus dependency updates.
 
 = 1.0.4 =
 Security hardening: fixes race conditions in queue and batch rollback, validates plugin_file paths.
