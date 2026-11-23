@@ -66,9 +66,6 @@
 			html += '<p class="bpi-upload-zone__text">' + this.esc(t.dropZoneText) + '</p>';
 			html += '<p class="bpi-upload-zone__subtext">' + this.esc(t.dropZoneSubtext) + '</p>';
 			html += '</div>';
-			// Kept outside the role="button" zone to avoid nested interactive controls;
-			// the zone triggers it for click and keyboard activation.
-			html += '<input type="file" id="bpi-file-input" class="bpi-upload-zone__input" multiple accept=".zip" tabindex="-1" aria-label="' + this.escAttr(t.selectFilesLabel) + '" />';
 
 			// Notices area.
 			html += '<div id="bpi-notices" role="alert"></div>';
@@ -87,6 +84,18 @@
 			html += '</div>';
 
 			this.$app.html(html);
+
+			// File input sits outside the role="button" zone to avoid nested
+			// interactive controls; the zone triggers it on click and keyboard.
+			$('<input>', {
+				type: 'file',
+				id: 'bpi-file-input',
+				'class': 'bpi-upload-zone__input',
+				multiple: true,
+				accept: '.zip',
+				tabindex: -1,
+				'aria-label': t.selectFilesLabel
+			}).insertAfter(this.$app.find('#bpi-upload-zone'));
 
 			this.$liveRegion = $('#bpi-live-region');
 		},
