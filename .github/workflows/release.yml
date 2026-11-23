@@ -128,6 +128,8 @@ jobs:
         with:
           path: /tmp/build/bulk-plugin-installer
           artifact-name: sbom-bulk-plugin-installer-${{ steps.version.outputs.tag }}.spdx.json
+          # Write into the workspace so the release step's `files` entry finds it.
+          output-file: sbom-bulk-plugin-installer-${{ steps.version.outputs.tag }}.spdx.json
 
       - name: Generate changelog from commits
         id: changelog
