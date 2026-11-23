@@ -121,6 +121,7 @@ class BPISettingsManager {
             self::SECTION_ID,
             array(
                 'key'         => 'bpi_max_plugins',
+                'label_for'   => 'bpi_max_plugins',
                 'description' => __( 'Maximum number of plugins allowed per bulk upload (1-100).', 'bulk-plugin-installer' ),
                 'min'         => 1,
                 'max'         => 100,
@@ -147,6 +148,7 @@ class BPISettingsManager {
             self::SECTION_ID,
             array(
                 'key'         => 'bpi_max_file_size',
+                'label_for'   => 'bpi_max_file_size',
                 'description' => __( 'Maximum ZIP file size in megabytes. Set to 0 to use server default.', 'bulk-plugin-installer' ),
                 'min'         => 0,
                 'max'         => 99999,
@@ -161,6 +163,7 @@ class BPISettingsManager {
             self::SECTION_ID,
             array(
                 'key'         => 'bpi_rollback_retention',
+                'label_for'   => 'bpi_rollback_retention',
                 'description' => __( 'How long to retain batch rollback backups, in hours (1-720).', 'bulk-plugin-installer' ),
                 'min'         => 1,
                 'max'         => 720,
@@ -187,6 +190,7 @@ class BPISettingsManager {
             self::SECTION_ID,
             array(
                 'key'         => 'bpi_email_recipients',
+                'label_for'   => 'bpi_email_recipients',
                 'description' => __( 'Comma-separated list of additional email addresses for notifications.', 'bulk-plugin-installer' ),
                 'placeholder' => 'admin@example.com, dev@example.com',
             )

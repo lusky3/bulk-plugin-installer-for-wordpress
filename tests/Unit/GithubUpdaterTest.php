@@ -82,8 +82,8 @@ class GithubUpdaterTest extends TestCase {
 
     public function test_constructor_uses_constant_when_no_basename(): void {
         $updater = new TestableGithubUpdater( '' );
-        // BPI_PLUGIN_BASENAME includes the repo directory name
-        $meta = $updater->addViewDetailsLink( array(), 'bulk-plugin-installer-for-wordpress/bulk-plugin-installer.php' );
+        // BPI_PLUGIN_BASENAME depends on the checkout directory name, so use it directly.
+        $meta = $updater->addViewDetailsLink( array(), BPI_PLUGIN_BASENAME );
         $this->assertCount( 1, $meta );
     }
 
