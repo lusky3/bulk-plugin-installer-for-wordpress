@@ -50,6 +50,9 @@ jobs:
           wp core install --path=/tmp/wordpress \
             --url=http://localhost:8080 --title=Test \
             --admin_user=admin --admin_password=admin --admin_email=admin@example.com
+          # The plugin loads .min assets unless SCRIPT_DEBUG is on, and those are
+          # only built by the release workflow, so load the source assets here.
+          wp config set SCRIPT_DEBUG true --raw --path=/tmp/wordpress
 
       - name: Install plugin
         run: |
